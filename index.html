@@ -4474,7 +4474,7 @@ function regionToKey(region) {
         // 剩余空间不便用 Blob 估算，保留原值或显示 --
         if (remainingEl) remainingEl.textContent = '--';
     }
-       const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
+           const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     window._filterDuijiangDone = false;
     function switchPage(pageName){
@@ -5253,7 +5253,6 @@ function regionToKey(region) {
       addMatch(new RegExp(`(?:平特(?:一肖|肖)?|[1一]肖中|平肖|平码[肖]?|一肖|独肖)${SEP}((?:[${Z}]+${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const zs = extractZodiacs(m[1]); const warnings = []; if (zs.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特肖', nums: zs, amt, cnt: zs.length, total: amt * zs.length, kw, warnings }; });
       addMatch(new RegExp(`(?:平特(?:一尾|尾)?|平尾|尾中)${SEP}((?:\\d+尾${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tails = (m[1].match(/\d/g) || []).map(d => d + '尾'); const warnings = []; if (tails.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特尾', nums: tails, amt, cnt: tails.length, total: amt * tails.length, kw, warnings }; });
       addMatch(new RegExp(`(?:平码|独平)${SEP}((?:\\d+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '平码', nums, amt, cnt: nums.length, total: amt * nums.length, kw, warnings }; });
-
 
       // 新增：纯数字拖胆识别（二中二/特碰 + 数字组 + 拖/托 + 数字组）
       addMatch(new RegExp('(二中二|特碰)\\D*((?:\\d{1,2}\\D*)+)\\s*(?:拖|托)\\D*\\s*((?:\\d{1,2}\\D*)+)\\s*(?:各|各组|各数|各号)?\\s*(\\d+)', 'g'), m => {
