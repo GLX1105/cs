@@ -4474,7 +4474,7 @@ function regionToKey(region) {
         // 剩余空间不便用 Blob 估算，保留原值或显示 --
         if (remainingEl) remainingEl.textContent = '--';
     }
-           const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
+              const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     window._filterDuijiangDone = false;
     function switchPage(pageName){
@@ -5057,6 +5057,26 @@ function regionToKey(region) {
       c = c.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       c = c.replace(/[oO]/g, '0');
       c = c.replace(/[liI]/g, '1');
+
+       // 转换拖胆格式：直接展开为组合对格式 (01-02)(01-03)...并正确附加金额
+      c = c.replace(
+          /(二中二|特碰)\D*((?:\d{1,2}\D*)+)\s*(?:拖|托)\D*\s*((?:\d{1,2}\D*)+)\s*各\s*(\d+)/g,
+          function(match, playType, danMaStr, tuoMaStr, amount) {
+              const danMa = danMaStr.match(/\d{1,2}/g) || [];
+              const tuoMa = tuoMaStr.match(/\d{1,2}/g) || [];
+              const allPairs = [];
+              for (let i = 0; i < danMa.length; i++) {
+                  for (let j = 0; j < tuoMa.length; j++) {
+                      if (danMa[i] !== tuoMa[j]) {
+                          allPairs.push('(' + danMa[i] + '-' + tuoMa[j] + ')');
+                      }
+                  }
+              }
+              if (allPairs.length === 0) return match;
+              return playType + ':' + allPairs.join('') + '各' + amount;
+          }
+      );
+
       c = c.replace(/[！!]/g, ' ');
       const reps = {
         夏式: '复式', 復式: '复式', 复制: '复式', 復制: '复式', 复习: '复式', 复试: '复式', 复示: '复式', 覆式: '复式', 複试: '复式',
@@ -5253,13 +5273,6 @@ function regionToKey(region) {
       addMatch(new RegExp(`(?:平特(?:一肖|肖)?|[1一]肖中|平肖|平码[肖]?|一肖|独肖)${SEP}((?:[${Z}]+${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const zs = extractZodiacs(m[1]); const warnings = []; if (zs.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特肖', nums: zs, amt, cnt: zs.length, total: amt * zs.length, kw, warnings }; });
       addMatch(new RegExp(`(?:平特(?:一尾|尾)?|平尾|尾中)${SEP}((?:\\d+尾${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tails = (m[1].match(/\d/g) || []).map(d => d + '尾'); const warnings = []; if (tails.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特尾', nums: tails, amt, cnt: tails.length, total: amt * tails.length, kw, warnings }; });
       addMatch(new RegExp(`(?:平码|独平)${SEP}((?:\\d+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '平码', nums, amt, cnt: nums.length, total: amt * nums.length, kw, warnings }; });
-
-      // 新增：纯数字拖胆识别（二中二/特碰 + 数字组 + 拖/托 + 数字组）
-      addMatch(new RegExp('(二中二|特碰)\\D*((?:\\d{1,2}\\D*)+)\\s*(?:拖|托)\\D*\\s*((?:\\d{1,2}\\D*)+)\\s*(?:各|各组|各数|各号)?\\s*(\\d+)', 'g'), m => {
-        const full = m[0]; const catName = m[1]; const leftPart = m[2]; const rightPart = m[3]; const amt = toNum(m[4]);
-        if (!amt || amt <= 0) return null;
-        return handleDragMatch(leftPart, rightPart, amt, '各', catName);
-      });
 
       // 新增："一"和"/"分隔的组合对识别
       addMatch(new RegExp('二中二\\s*:\\s*((?:\\d{1,2}\\s*一\\s*\\d{1,2}\\s*\\/\\s*)*\\d{1,2}\\s*一\\s*\\d{1,2})\\s*各\\s*(\\d+)', 'g'), m => {
