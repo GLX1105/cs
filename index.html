@@ -4474,7 +4474,7 @@ function regionToKey(region) {
         // 剩余空间不便用 Blob 估算，保留原值或显示 --
         if (remainingEl) remainingEl.textContent = '--';
     }
-    const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
+       const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     window._filterDuijiangDone = false;
     function switchPage(pageName){
@@ -5079,11 +5079,16 @@ function regionToKey(region) {
         '复试二中二': '复式二中二', '二中二复试': '复式二中二', '2中2复试': '复式二中二', '复试2中2': '复式二中二',
         '复试三中三': '复式三中三', '三中三复试': '复式三中三', '3中3复试': '复式三中三', '复试3中3': '复式三中三',
         '三三二二串': '复三复二', '三三二二': '复三复二', '家属': '家肖',
-        '复3': '复三', '复三': '复式三', '复3尾': '复三尾'
+        '复3': '复三', '复三': '复式三', '复3尾': '复三尾',
+        '复试二肖': '二连肖复式', '复试三肖': '三连肖复式', '复试四肖': '四连肖复式', '复试五肖': '五连肖复式',
+        '复试2肖': '二连肖复式', '复试3肖': '三连肖复式', '复试4肖': '四连肖复式', '复试5肖': '五连肖复式'
       };
       for (const [k, v] of Object.entries(reps)) c = c.split(k).join(v);
       ['天天彩', '天天采', '天天', '天彩', '天采', '总单'].forEach(s => c = c.split(s).join(''));
       c = c.replace(/澳门\d+期/g, '');
+      // 金额后缀+句号处理：将 "数字+可选后缀+句号" 中的句号替换为换行
+      c = c.replace(/(\d(?:米|元|块|角|分|厘)?)。/g, '$1\n');
+      // 再将剩余的中文标点替换为空格
       c = c.replace(/[。！？；]/g, ' ');
       c = c.replace(/[^\dA-Za-z\u4e00-\u9fa5\s,\-，\=＝\.]/g, ' ');
       c = c.replace(/\n/g, '[[[NL]]]');
@@ -5249,6 +5254,33 @@ function regionToKey(region) {
       addMatch(new RegExp(`(?:平特(?:一尾|尾)?|平尾|尾中)${SEP}((?:\\d+尾${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tails = (m[1].match(/\d/g) || []).map(d => d + '尾'); const warnings = []; if (tails.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特尾', nums: tails, amt, cnt: tails.length, total: amt * tails.length, kw, warnings }; });
       addMatch(new RegExp(`(?:平码|独平)${SEP}((?:\\d+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '平码', nums, amt, cnt: nums.length, total: amt * nums.length, kw, warnings }; });
 
+      // 新增：纯数字拖胆识别（二中二/特碰 + 数字组 + 拖/托 + 数字组）
+      addMatch(new RegExp(`(二中二|特碰)\\D*((?:\\d{1,2}\\D*)+)\\s*(?:拖|托)\\D*\\s*((?:\\d{1,2}\\D*)+)\\s*(?:各|各组|各数|各号)?\\s*(\\d+)`, 'g'), m => {
+        const full = m[0]; const catName = m[1]; const leftPart = m[2]; const rightPart = m[3]; const amt = toNum(m[4]);
+        if (!amt || amt <= 0) return null;
+        return handleDragMatch(leftPart, rightPart, amt, '各', catName);
+      });
+
+      // 新增："一"和"/"分隔的组合对识别
+      addMatch(new RegExp(`二中二\\s*:\\s*((?:\\d{1,2}\\s*一\\s*\\d{1,2}\\s*\\/\\s*)*\\d{1,2}\\s*一\\s*\\d{1,2})\\s*各\\s*(\\d+)`, 'g'), m => {
+        const full = m[0]; const combosStr = m[1]; const amt = toNum(m[2]);
+        if (!amt || amt <= 0) return null;
+        const pairs = combosStr.split('/').map(p => p.trim()).filter(p => p);
+        const leftNums = []; const rightNums = [];
+        pairs.forEach(p => {
+          const parts = p.split('一').map(n => n.trim());
+          if (parts.length === 2) {
+            const a = parseInt(parts[0]); const b = parseInt(parts[1]);
+            if (a >= 1 && a <= 49 && b >= 1 && b <= 49) {
+              leftNums.push(String(a).padStart(2, '0'));
+              rightNums.push(String(b).padStart(2, '0'));
+            }
+          }
+        });
+        if (leftNums.length === 0 || rightNums.length === 0) return null;
+        return handleDragMatch(leftNums.join(' '), rightNums.join(' '), amt, '各', '二中二');
+      });
+
       allMatches.push(...multiMatches);
       allMatches.sort((a, b) => a.start - b.start);
       const deduped = []; let lastEnd = 0;
@@ -5285,7 +5317,7 @@ function regionToKey(region) {
         if (!content || !content.trim()) return null;
         if (/特码/.test(content)) return null;
         const trimmed = content.trim();
-        const shxMatch = trimmed.match(new RegExp(`(.+?)(各肖|各(?!数|号|组|码|注|下|买))\\s*(\\d+)`));
+        const shxMatch = trimmed.match(new RegExp(`(.+?)(各肖|各(?!数|组|码|注|下|买))\\s*(\\d+)`));
         if (!shxMatch) return null;
         const rawContent = shxMatch[1]; const amtRaw = parseInt(shxMatch[3]) || 0; const kw = shxMatch[2] || '';
         if (amtRaw <= 0) return null;
