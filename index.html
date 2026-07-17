@@ -125,7 +125,6 @@
         #configModal tbody tr:hover { background-color:#e8f4ff; } #configModal tbody tr:nth-child(even) { background-color:#f9f9f9; }
         #configModal tbody tr.selected { background-color:#b8daff!important; outline:1px solid #4a90e2; outline-offset:-1px; }
 
-        /* 配置窗口 - 申报人页面滚动条 */
         #configModal .applicant-body { display:flex; gap:10px; flex:1; overflow:hidden; min-height:0; }
         #configModal .applicant-list { flex:1; overflow-y:auto; border:1px solid #d0d0d0; max-height:100%; }
         #configModal .applicant-note { width:200px; flex-shrink:0; font-size:12px; color:#666; line-height:1.6; padding:4px; }
@@ -161,11 +160,6 @@
         #orderTotalAmount { color:#059669; font-weight:bold; }
         #orderLineCount { color:#888; font-size:12px; }
 
-        .draw-history-cell { display:flex; flex-direction:column; align-items:center; gap:4px; }
-        .draw-history-balls { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
-        .draw-history-shengs { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
-        .draw-history-item { display:flex; flex-direction:column; align-items:center; }
-
         #orderGroupModal .report-body { padding:0!important; }
         #orderGroupBody { display:flex; padding:0; }
         #orderGroupLeft { flex:3; overflow-y:auto; padding:0 20px 20px 20px; display:flex; justify-content:flex-end; align-items:flex-start; flex-wrap:wrap; background:#f5f5f5; border:1.5px solid #10b981; }
@@ -176,7 +170,6 @@
         #orderGroupRight > div { margin:0!important; padding:0!important; }
         #orderGroupRight .text-\[11px\] { line-height:1!important; margin:0!important; padding:0!important; }
 
-        /* 替换预设弹窗 - 滚动条 */
         #replacePresetModal .modal-body { flex:1; overflow-y:auto; padding:12px; min-height:0; }
         #presetList { overflow-y:auto; max-height:280px; }
         #replacePresetModal .modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:10px 16px; border-top:1px solid #e5e7eb; }
@@ -186,7 +179,6 @@
         .replace-preset-item:hover { background:#f0f0f0; }
         .replace-preset-item span { font-size:13px; color:#333; }
 
-        /* 侧边栏存储信息抽屉样式 */
         #storageDrawer { background: transparent; border-top: 1px solid rgba(213,220,227,0.3); }
         #storageToggle { writing-mode: vertical-rl; text-orientation: upright; cursor: pointer; color: #888; padding: 8px 2px; font-size: 11px; user-select: none; transition: color 0.2s; }
         #storageToggle:hover { color: #333; }
@@ -482,7 +474,13 @@
     </div>
 </div>
 <script>
-    // ===== 完整数据与逻辑 =====
+// ===== 通用区域转换函数 =====
+function regionToKey(region) {
+    const map = { '澳门': 'macau', '香港': 'hongkong', '粤港': 'yuegang' };
+    return map[region] || 'macau';
+}
+
+// ===== 完整数据与逻辑 =====
     const shengOrder = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
     const numberList = [
         {sheng:'马',num:'01',color:'red'},{sheng:'马',num:'13',color:'red'},{sheng:'马',num:'25',color:'blue'},{sheng:'马',num:'37',color:'blue'},{sheng:'马',num:'49',color:'green'},
@@ -1915,9 +1913,19 @@
     }
 
     function updateRowSelection() { document.querySelectorAll('#orderDetailTbody .order-row').forEach(row => { const realIdx = parseInt(row.dataset.realIndex); row.classList.toggle('selected', selectedOrderIndices.has(realIdx)); }); }
-    // ========= 配置弹窗逻辑 =========
+// ========= 配置弹窗逻辑 =========
     (function initConfigModal(){
         let isConfigDirty = false;
+
+        // 格式化赔率/返水显示：整数不带小数点，小数保留原位数（去掉末尾多余的0）
+        function formatOddsDisplay(val) {
+            if (val === null || val === undefined || isNaN(val)) return '0';
+            if (Number.isInteger(val)) return val.toString();
+            // 去掉末尾多余的0，但至少保留一位小数
+            let s = val.toFixed(10).replace(/0+$/, '').replace(/\.$/, '');
+            if (!s.includes('.')) s += '.0';
+            return s;
+        }
 
         const modal=document.getElementById('configModal');
         modal.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',function(){const type=this.dataset.tab;if(!type)return;modal.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active');modal.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));document.getElementById(type+'-content').classList.add('active');if(type==='applicant'&&window.renderApplicants)window.renderApplicants();});});
@@ -1967,7 +1975,7 @@
                 const tdOdds=document.createElement('td');
                 const oddsSpan=document.createElement('span');
                 oddsSpan.className='cell-text';
-                oddsSpan.textContent=r.odds;
+                oddsSpan.textContent=formatOddsDisplay(parseFloat(r.odds));
                 const oddsInput=document.createElement('input');
                 oddsInput.type='text';
                 oddsInput.className='cell-input';
@@ -1983,7 +1991,12 @@
                     oddsSpan.classList.remove('editing');
                     oddsInput.classList.remove('editing');
                     const val=parseFloat(oddsInput.value);
-                    if(!isNaN(val)&&val>=0){r.odds=val.toFixed(2);oddsSpan.textContent=r.odds;}else{oddsInput.value=r.odds;}
+                    if(!isNaN(val)&&val>=0){
+                        r.odds=formatOddsDisplay(val);
+                        oddsSpan.textContent=r.odds;
+                    }else{
+                        oddsInput.value=r.odds;
+                    }
                     isConfigDirty = true;
                 };
                 oddsInput.addEventListener('blur',saveOdds);
@@ -1995,7 +2008,7 @@
                 const tdRebate=document.createElement('td');
                 const rebateSpan=document.createElement('span');
                 rebateSpan.className='cell-text';
-                rebateSpan.textContent=r.rebate+'%';
+                rebateSpan.textContent=formatOddsDisplay(parseFloat(r.rebate))+'%';
                 const rebateInput=document.createElement('input');
                 rebateInput.type='text';
                 rebateInput.className='cell-input';
@@ -2011,7 +2024,12 @@
                     rebateSpan.classList.remove('editing');
                     rebateInput.classList.remove('editing');
                     const val=parseFloat(rebateInput.value);
-                    if(!isNaN(val)&&val>=0&&val<=100){r.rebate=val.toFixed(2);rebateSpan.textContent=r.rebate+'%';}else{rebateInput.value=r.rebate;}
+                    if(!isNaN(val)&&val>=0&&val<=100){
+                        r.rebate=formatOddsDisplay(val);
+                        rebateSpan.textContent=r.rebate+'%';
+                    }else{
+                        rebateInput.value=r.rebate;
+                    }
                     isConfigDirty = true;
                 };
                 rebateInput.addEventListener('blur',saveRebate);
@@ -2028,10 +2046,10 @@
         schemeSelect.addEventListener('change',()=>{currentSchemeIdx=parseInt(schemeSelect.value,10);renderOddsTable();});
         document.getElementById('btn-add-scheme').addEventListener('click',()=>{const src=window.schemes[currentSchemeIdx];let newName=src.name+'_副本';let cnt=1;while(window.schemes.some(s=>s.name===newName))newName=src.name+'_副本'+(++cnt);const newRows=src.rows.map(r=>({...r}));window.schemes.push({name:newName,rows:newRows});currentSchemeIdx=window.schemes.length-1;renderSchemeSelect();renderOddsTable();isConfigDirty = true;});
         document.getElementById('btn-del-scheme').addEventListener('click',async ()=>{if(window.schemes.length<=1) return showAlert('至少保留一个配置方案。');const ok=await showConfirm(`确定删除方案"${window.schemes[currentSchemeIdx].name}"吗？`);if(!ok)return;window.schemes.splice(currentSchemeIdx,1);if(currentSchemeIdx>=window.schemes.length)currentSchemeIdx=window.schemes.length-1;renderSchemeSelect();renderOddsTable();isConfigDirty = true;});
-        document.getElementById('btn-add-row').addEventListener('click',()=>{const type=document.getElementById('input-bet-type').value.trim();const oddsVal=document.getElementById('input-odds').value.trim();const rebateVal=document.getElementById('input-rebate').value.trim();if(!type)return showAlert('请输入投注类型。');const odds=parseFloat(oddsVal);if(isNaN(odds)||odds<0)return showAlert('赔率必须为有效数字。');let rebate=parseFloat(rebateVal);if(isNaN(rebate)||rebate<0||rebate>100){rebate=parseFloat(getDefaultRebate(window.schemes[currentSchemeIdx].name));}window.schemes[currentSchemeIdx].rows.push({type,odds:odds.toFixed(2),rebate:rebate.toFixed(2)});renderOddsTable();isConfigDirty = true;document.getElementById('input-bet-type').value='';document.getElementById('input-odds').value='';document.getElementById('input-rebate').value='';});
+        document.getElementById('btn-add-row').addEventListener('click',()=>{const type=document.getElementById('input-bet-type').value.trim();const oddsVal=document.getElementById('input-odds').value.trim();const rebateVal=document.getElementById('input-rebate').value.trim();if(!type)return showAlert('请输入投注类型。');const odds=parseFloat(oddsVal);if(isNaN(odds)||odds<0)return showAlert('赔率必须为有效数字。');let rebate=parseFloat(rebateVal);if(isNaN(rebate)||rebate<0||rebate>100){rebate=parseFloat(getDefaultRebate(window.schemes[currentSchemeIdx].name));}window.schemes[currentSchemeIdx].rows.push({type,odds:formatOddsDisplay(odds),rebate:formatOddsDisplay(rebate)});renderOddsTable();isConfigDirty = true;document.getElementById('input-bet-type').value='';document.getElementById('input-odds').value='';document.getElementById('input-rebate').value='';});
         document.getElementById('btn-del-row').addEventListener('click',async ()=>{if(!selectedOddsRow)return showAlert('请先选中一行。');const rowIndex=parseInt(selectedOddsRow.dataset.rowIndex,10);if(isNaN(rowIndex))return;const typeName=window.schemes[currentSchemeIdx].rows[rowIndex].type;const ok=await showConfirm(`确定删除投注类型"${typeName}"吗？`);if(!ok)return;window.schemes[currentSchemeIdx].rows.splice(rowIndex,1);renderOddsTable();isConfigDirty = true;});
         document.getElementById('btn-rename-confirm').addEventListener('click',()=>{if(!document.getElementById('chk-rename').checked)return showAlert('请先勾选复选框。');const newName=document.getElementById('input-rename').value.trim();if(!newName)return showAlert('名称不能为空。');if(window.schemes.some(s=>s.name===newName))return showAlert('方案名称已存在。');window.schemes[currentSchemeIdx].name=newName;renderSchemeSelect();isConfigDirty = true;document.getElementById('input-rename').value='';document.getElementById('chk-rename').checked=false;if(document.getElementById('applicant-content').classList.contains('active')){window.renderApplicants();}});
-        document.getElementById('btn-unify-confirm').addEventListener('click',()=>{if(!document.getElementById('chk-unify').checked)return showAlert('请先勾选复选框。');const rebateStr=document.getElementById('input-unify-rebate').value.trim();const rebate=parseFloat(rebateStr);if(isNaN(rebate)||rebate<0||rebate>100)return showAlert('请输入有效的返水比例（0-100）。');window.schemes[currentSchemeIdx].rows.forEach(r=>r.rebate=rebate.toFixed(2));renderOddsTable();isConfigDirty = true;document.getElementById('input-unify-rebate').value='';document.getElementById('chk-unify').checked=false;});
+        document.getElementById('btn-unify-confirm').addEventListener('click',()=>{if(!document.getElementById('chk-unify').checked)return showAlert('请先勾选复选框。');const rebateStr=document.getElementById('input-unify-rebate').value.trim();const rebate=parseFloat(rebateStr);if(isNaN(rebate)||rebate<0||rebate>100)return showAlert('请输入有效的返水比例（0-100）。');window.schemes[currentSchemeIdx].rows.forEach(r=>r.rebate=formatOddsDisplay(rebate));renderOddsTable();isConfigDirty = true;document.getElementById('input-unify-rebate').value='';document.getElementById('chk-unify').checked=false;});
         renderSchemeSelect();renderOddsTable();
         window.applicants=[];window.nextApplicantId=1;window.selectedApplicantId=null;
         const initNames=['张三','01群','02群','03群','04群','05群','06群','07群','08群','09群'];
@@ -2761,7 +2779,8 @@
             </div>
         </div>`;
     }
-// ========= 通用的报告赔付计算函数 =========
+
+    // ========= 通用的报告赔付计算函数 =========
     function computePayoutForReport(order, scheme) {
         const betType = (order.betType || '').trim();
         const winAmount = parseFloat(order.winAmount) || 0;
@@ -2922,7 +2941,7 @@
             let result = null;
             const isSplitPlay = (betType === '特肖' || betType === '平特肖' || betType.includes('连肖') || betType === '平特尾' || betType.includes('连尾'));
             if (isSplitPlay) {
-                const regionKey = o.region === '澳门' ? 'macau' : (o.region === '香港' ? 'hongkong' : '粤港');
+                const regionKey = regionToKey(o.region);
                 const drawNums = areaDrawNums[regionKey];
                 if (drawNums) {
                     result = processWinSplit(o, scheme, drawNums);
@@ -2979,7 +2998,9 @@
             html += '金额明细：' + detailParts.join('+') + '=' + formatMoney(totalAmount) + ' (共计' + seqKeys.length + '条)<br>';
         }
         html += '订单总额：' + formatMoney(totalAmount) + '<br>';
-        html += '返水：' + rebateAmount + '<br>';
+        if (rebateAmount > 0) {
+            html += '返水：' + rebateAmount + '<br>';
+        }
         html += '中奖情况：<br>';
         if (winLines) {
             html += winLines;
@@ -3167,6 +3188,7 @@
             }
             await persistAll();
             addOperationLog('兑奖操作', '综合兑奖完成，更新 ' + updatedCount + ' 条订单');
+            switchPage(currentPage);  // 先刷新页面，确保订单详情页显示最新兑奖结果
             const reportHTML = generateDuijiangReport();
             showReportModal(reportHTML);
             if (skippedAreas.size > 0) { setTimeout(() => showAlert(`以下区域开奖数据不足7个，已跳过：${[...skippedAreas].join('、')}`), 500); }
@@ -3233,7 +3255,7 @@
                     let result = null;
                     const isSplitPlay = (betType === '特肖' || betType === '平特肖' || betType.includes('连肖') || betType === '平特尾' || betType.includes('连尾'));
                     if (isSplitPlay) {
-                        const regionKey = o.region === '澳门' ? 'macau' : (o.region === '香港' ? 'hongkong' : '粤港');
+                        const regionKey = regionToKey(o.region);
                         const drawNums = areaDrawNums[regionKey];
                         if (drawNums) {
                             result = processWinSplit(o, reporterScheme, drawNums);
@@ -3279,7 +3301,9 @@
             html += '申报人：' + reporter + '<br>';
             html += '订单金额明细：' + detailStr + '<br>';
             html += '订单总额：' + formatMoney(totalAmount) + '<br>';
-            html += '返水：' + rebateAmount + '<br>';
+            if (rebateAmount > 0) {
+                html += '返水：' + rebateAmount + '<br>';
+            }
             html += '中奖情况：<br>';
             if (winLines) {
                 html += winLines;
@@ -3499,19 +3523,13 @@
         const updateRightPanel = () => {
             const rightDiv = document.getElementById('orderGroupRight');
             if (!rightDiv) return;
+            rightDiv.style.background = '#ffffff';
             const selectedRegions = getSelectedRegions();
             const selectedReporter = getSelectedReporter();
-            if (!selectedReporter) {
-                rightDiv.innerHTML = '';
-                return;
-            }
+            if (!selectedReporter) { rightDiv.innerHTML = ''; return; }
 
             let html = '';
-
-            if (selectedRegions.length === 0) {
-                const reportHtml = generateReporterProfitReport(selectedReporter, []);
-                html = '<div style="padding-top:28px;">' + reportHtml + '</div>';
-            } else {
+            if (selectedRegions.length > 0) {
                 const todayDraw = getCurrentDrawData();
                 const areaLabels = {macau:'澳门',hongkong:'香港',yuegang:'粤港'};
                 selectedRegions.forEach(region => {
@@ -3523,31 +3541,38 @@
                         const latestQihao = areaHist[areaHist.length-1].qihao;
                         qihaoStr = ' ' + String(latestQihao).slice(-3) + '期';
                     }
-                    let cellsHTML = '';
-                    for(let i=0;i<7;i++){
-                        const num = data.nums[i] || '';
-                        const sheng = data.shengs[i] || '';
-                        if (i === 6) {
-                            cellsHTML += `<div style="display:flex;flex-direction:column;align-items:center;width:28px;margin:0;padding:0;">
-                                <span style="font-size:16px;font-weight:bold;line-height:28px;">+</span>
-                                <div style="height:20px;"></div>
-                            </div>`;
-                        }
-                        cellsHTML += `<div class="flex flex-col items-center gap-0" style="margin:0;padding:0;">
-                            ${buildSmallBallHTML(num)}
-                            ${buildSmallShengBlock(sheng)}
-                        </div>`;
-                    }
                     let titleText = areaLabels[region] + '开奖';
                     if (region !== 'hongkong') titleText += qihaoStr;
-                    html += `<div style="margin:0;padding:0;line-height:1;">
-                        <div class="text-[11px] font-medium text-gray-600" style="margin:0;padding:0;line-height:1;">${titleText}</div>
-                        <div class="flex justify-center gap-1 items-end" style="margin:0;padding:0;">${cellsHTML}</div>
-                    </div>`;
+
+                    const nums = data.nums || [];
+                    const shengs = data.shengs || [];
+                    html += `<div style="display:flex; flex-direction:column; align-items:flex-start; margin:0 0 1.2em 0; padding:0; line-height:1.2;">`;
+                    
+                    html += `<div style="font-weight:bold; font-size:12px; margin:0 0 2px 0; padding:0;">${titleText}</div>`;
+                    
+                    let ballsHTML = '<div style="display:flex; align-items:flex-end; gap:4px; margin:0; padding:0;">';
+                    let shengsHTML = '<div style="display:flex; align-items:flex-end; gap:4px; margin:0; padding:0;">';
+                    
+                    for (let i = 0; i < 7; i++) {
+                        if (i === 6) {
+                            ballsHTML += `<span style="display:inline-flex; width:28px; justify-content:center; align-items:flex-end; font-size:16px; font-weight:bold; line-height:1;">+</span>`;
+                            shengsHTML += `<span style="width:28px;"></span>`;
+                        }
+                        ballsHTML += buildSmallBallHTML(nums[i] || '');
+                        shengsHTML += buildSmallShengBlock(shengs[i] || '');
+                    }
+                    ballsHTML += '</div>';
+                    shengsHTML += '</div>';
+
+                    html += ballsHTML;
+                    html += shengsHTML;
+                    html += `</div>`;
                 });
-                const reportHtml = generateReporterProfitReport(selectedReporter, selectedRegions);
-                html += reportHtml;
             }
+
+            html += '<div style="height:10px;"></div>';
+            const reportHtml = generateReporterProfitReport(selectedReporter, selectedRegions);
+            html += reportHtml;
 
             rightDiv.innerHTML = html;
         };
@@ -3588,7 +3613,7 @@
                 let result = null;
                 const isSplitPlay = (betType === '特肖' || betType === '平特肖' || betType.includes('连肖') || betType === '平特尾' || betType.includes('连尾'));
                 if (isSplitPlay) {
-                    const regionKey = o.region === '澳门' ? 'macau' : (o.region === '香港' ? 'hongkong' : '粤港');
+                    const regionKey = regionToKey(o.region);
                     const drawNums = areaDrawNums[regionKey];
                     if (drawNums) {
                         result = processWinSplit(o, reporterScheme, drawNums);
@@ -3633,7 +3658,9 @@
             let html = '<div style="font-size:12px;line-height:1.5;padding:4px 0;font-weight:bold;">';
             html += '申报人：' + reporter + '<br>';
             html += '订单总额：' + formatMoney(totalAmount) + '<br>';
-            html += '返水：' + rebateAmount + '<br>';
+            if (rebateAmount > 0) {
+                html += '返水：' + rebateAmount + '<br>';
+            }
             html += '中奖情况：<br>';
             if (winLines) {
                 html += winLines;
@@ -3681,8 +3708,6 @@
             }
 
             let columnsHTML = columns.map((col, colIdx) => {
-                let colHeader = `<div style="text-align:center;font-size:11px;color:#888;font-weight:normal;padding:2px 0;border-bottom:1px solid #e5e7eb;margin-bottom:4px;">序/金额</div>`;
-
                 const colItemsHTML = col.map(item => {
                     const mergedWins = [];
                     const typeMap = {};
@@ -3695,7 +3720,8 @@
                     });
 
                     let itemHTML = `<div style="margin:0;padding:2px 4px;border:1px solid #e5e7eb;border-radius:3px;background:#fff;text-align:center;">`;
-                    itemHTML += `<div class="order-item" style="margin:0;padding:0;"><span style="color:#000;font-weight:normal;">${item.seq}条：</span><span style="color:#2563eb;font-weight:bold;">${item.amount}</span></div>`;
+                    // “x条”不保留原样，金额字体加大
+                    itemHTML += `<div class="order-item" style="margin:0;padding:0;"><span style="color:#000;font-weight:normal;">${item.seq}条：</span><span style="color:#2563eb;font-weight:bold;font-size:15px;">${item.amount}</span></div>`;
                     if (mergedWins.length > 0) {
                         mergedWins.forEach(w => {
                             itemHTML += `<div class="order-item" style="margin:0;padding:0;text-align:center;"><span style="color:#dc2626;font-weight:normal;">${w.betType}：${formatMoney(w.winAmount)}</span></div>`;
@@ -3705,7 +3731,7 @@
                     return itemHTML;
                 }).join('');
 
-                return `<div class="order-column" style="border-right:none;padding-right:0;margin-right:8px;">${colHeader}${colItemsHTML}</div>`;
+                return `<div class="order-column" style="border-right:none;padding-right:0;margin-right:8px;padding-top:2px;">${colItemsHTML}</div>`;
             }).join('');
 
             leftDiv.innerHTML = columnsHTML;
@@ -4378,9 +4404,8 @@
 
     function updateMaxLossDisplay() {}
 
-    // ========= 存储信息抽屉更新函数 =========
+    // ========= 存储信息抽屉更新函数（使用真实数据大小） =========
     function updateStoragePanel() {
-        // 计算今日数量：当前日期按"申报人+订单序号"去重
         const todaySet = new Set();
         for (const o of orderList) {
             if (o.date === currentFilterDate) {
@@ -4390,7 +4415,6 @@
         }
         const todayCount = todaySet.size;
 
-        // 计算订单数量：各日期分别按"申报人+订单序号"去重后逐天累加，跨日期不去重
         const dateKeys = {};
         for (const o of orderList) {
             const date = o.date || '';
@@ -4401,6 +4425,36 @@
         let totalOrders = 0;
         for (const date in dateKeys) {
             totalOrders += dateKeys[date].size;
+        }
+
+        // 计算真实数据大小（JSON + Blob）
+        const allData = {
+            orders: orderList,
+            drawData: drawData,
+            drawLocked: drawLocked,
+            historyRecords: historyRecords,
+            operationLogs: operationLogs,
+            schemes: window.schemes,
+            applicants: window.applicants,
+            adjustValues: adjustValues,
+            selectedSchemeIdx: selectedSchemeIdx,
+            yearZodiac: window.yearZodiac,
+            reportedOrdersSpecial: window.reportedOrdersSpecial || [],
+            reportedOrdersLianXiao: window.reportedOrdersLianXiao || [],
+            reportedOrdersLianMa: window.reportedOrdersLianMa || [],
+            replacePresets: getReplacePresets()
+        };
+        const jsonStr = JSON.stringify(allData);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const realSizeBytes = blob.size;
+
+        let realSizeStr;
+        if (realSizeBytes >= 1024 * 1024) {
+            realSizeStr = (realSizeBytes / 1024 / 1024).toFixed(2) + ' MB';
+        } else if (realSizeBytes >= 1024) {
+            realSizeStr = (realSizeBytes / 1024).toFixed(1) + ' KB';
+        } else {
+            realSizeStr = realSizeBytes + ' B';
         }
 
         const dbStatusEl = document.getElementById('storageDbStatus');
@@ -4416,23 +4470,10 @@
         todayCountEl.textContent = todayCount;
         orderCountEl.textContent = totalOrders;
 
-        if (navigator.storage && navigator.storage.estimate) {
-            navigator.storage.estimate().then(estimate => {
-                const usedMB = (estimate.usage / 1024 / 1024).toFixed(2);
-                const quotaMB = (estimate.quota / 1024 / 1024).toFixed(2);
-                const remainingMB = (Math.max(0, estimate.quota - estimate.usage) / 1024 / 1024).toFixed(2);
-                usedEl.textContent = usedMB + ' MB';
-                remainingEl.textContent = remainingMB + ' MB';
-            }).catch(() => {
-                usedEl.textContent = '--';
-                remainingEl.textContent = '--';
-            });
-        } else {
-            usedEl.textContent = '--';
-            remainingEl.textContent = '--';
-        }
+        usedEl.textContent = realSizeStr;
+        // 剩余空间不便用 Blob 估算，保留原值或显示 --
+        if (remainingEl) remainingEl.textContent = '--';
     }
-
     const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     window._filterDuijiangDone = false;
