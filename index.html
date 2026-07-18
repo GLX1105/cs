@@ -474,7 +474,7 @@
     </div>
 </div>
 <script>
-// ===== 通用区域转换函数 =====
+    // ===== 通用区域转换函数 =====
 function regionToKey(region) {
     const map = { '澳门': 'macau', '香港': 'hongkong', '粤港': 'yuegang' };
     return map[region] || 'macau';
@@ -1913,7 +1913,7 @@ function regionToKey(region) {
     }
 
     function updateRowSelection() { document.querySelectorAll('#orderDetailTbody .order-row').forEach(row => { const realIdx = parseInt(row.dataset.realIndex); row.classList.toggle('selected', selectedOrderIndices.has(realIdx)); }); }
-// ========= 配置弹窗逻辑 =========
+    // ========= 配置弹窗逻辑 =========
     (function initConfigModal(){
         let isConfigDirty = false;
 
@@ -2065,7 +2065,7 @@ function regionToKey(region) {
         document.addEventListener('keydown',e=>{if(e.key==='Delete'&&document.getElementById('applicant-content').classList.contains('active')){if(document.activeElement&&document.activeElement.tagName==='INPUT')return;window.deleteApplicant();}});
         window.renderApplicants();
     })();
-// ===================== 页面渲染函数 =====================
+    // ===================== 页面渲染函数 =====================
 
     // 辅助函数：将订单信息中的中奖 token 高亮为红色
     function highlightOrderInfo(orderInfo, winStatus, betType, drawNums) {
@@ -4474,7 +4474,7 @@ function regionToKey(region) {
         // 剩余空间不便用 Blob 估算，保留原值或显示 --
         if (remainingEl) remainingEl.textContent = '--';
     }
-              const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
+        const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     window._filterDuijiangDone = false;
     function switchPage(pageName){
@@ -4969,7 +4969,7 @@ function regionToKey(region) {
 
     window.addEventListener('DOMContentLoaded', initApp);
 
-    // ===== 订单解析引擎集成 =====
+    // ===== 新版字典与识别核心 =====
     const ZODIAC = '鼠牛虎兔龙蛇马羊猴鸡狗猪';
     const ZODIAC_NUMS = { '鼠': '07 19 31 43', '牛': '06 18 30 42', '虎': '05 17 29 41', '兔': '04 16 28 40', '龙': '03 15 27 39', '蛇': '02 14 26 38', '马': '01 13 25 37 49', '羊': '12 24 36 48', '猴': '11 23 35 47', '鸡': '10 22 34 46', '狗': '09 21 33 45', '猪': '08 20 32 44' };
     const NUM_TO_ZODIAC = {};
@@ -5051,33 +5051,13 @@ function regionToKey(region) {
     function extractZodiacs(txt) { return (txt.match(new RegExp(`[${ZODIAC}]`, 'g')) || []); }
     function findInvalidNums(txt) { if (!txt) return []; const allNums = (txt.match(/\d+/g) || []).map(n => parseInt(n)); return allNums.filter(n => n > 49); }
 
+    // ===== 预处理 =====
     function preprocess(txt) {
       let c = txt;
       c = c.replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
       c = c.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       c = c.replace(/[oO]/g, '0');
-      c = c.replace(/[liI]/g, '1');
-
-       // 转换拖胆格式：直接展开为组合对格式 (01-02)(01-03)...并正确附加金额
-      c = c.replace(
-          /(二中二|特碰)\D*((?:\d{1,2}\D*)+)\s*(?:拖|托)\D*\s*((?:\d{1,2}\D*)+)\s*各\s*(\d+)/g,
-          function(match, playType, danMaStr, tuoMaStr, amount) {
-              const danMa = danMaStr.match(/\d{1,2}/g) || [];
-              const tuoMa = tuoMaStr.match(/\d{1,2}/g) || [];
-              const allPairs = [];
-              for (let i = 0; i < danMa.length; i++) {
-                  for (let j = 0; j < tuoMa.length; j++) {
-                      if (danMa[i] !== tuoMa[j]) {
-                          allPairs.push('(' + danMa[i] + '-' + tuoMa[j] + ')');
-                      }
-                  }
-              }
-              if (allPairs.length === 0) return match;
-              return playType + ':' + allPairs.join('') + '各' + amount;
-          }
-      );
-
-      c = c.replace(/[！!]/g, ' ');
+      c = c.replace(/[liI！!]/g, '1');
       const reps = {
         夏式: '复式', 復式: '复式', 复制: '复式', 復制: '复式', 复习: '复式', 复试: '复式', 复示: '复式', 覆式: '复式', 複试: '复式',
         友: '有', 尤: '龙', 虑: '虎', 坡: '波', 午: '牛', 綠: '绿', 孑: '子', 监: '蓝', 俏: '肖', 串肖: '连肖', '连/肖': '连肖',
@@ -5099,36 +5079,25 @@ function regionToKey(region) {
         '复试二中二': '复式二中二', '二中二复试': '复式二中二', '2中2复试': '复式二中二', '复试2中2': '复式二中二',
         '复试三中三': '复式三中三', '三中三复试': '复式三中三', '3中3复试': '复式三中三', '复试3中3': '复式三中三',
         '三三二二串': '复三复二', '三三二二': '复三复二', '家属': '家肖',
-        '复3': '复三', '复三': '复式三', '复3尾': '复三尾',
-        '复试二肖': '二连肖复式', '复试三肖': '三连肖复式', '复试四肖': '四连肖复式', '复试五肖': '五连肖复式',
-        '复试2肖': '二连肖复式', '复试3肖': '三连肖复式', '复试4肖': '四连肖复式', '复试5肖': '五连肖复式'
+        '复3': '复三', '复三': '复式三', '复3尾': '复三尾'
       };
       for (const [k, v] of Object.entries(reps)) c = c.split(k).join(v);
       ['天天彩', '天天采', '天天', '天彩', '天采', '总单'].forEach(s => c = c.split(s).join(''));
       c = c.replace(/澳门\d+期/g, '');
-      // 金额后缀+句号处理：将 "数字+可选后缀+句号" 中的句号替换为换行
-      c = c.replace(/(\d(?:米|元|块|角|分|厘)?)。/g, '$1\n');
-      // 再将剩余的中文标点替换为空格
+      // 金额后缀+中文标点 → 换行（避免污染下一行）
+      c = c.replace(/(\d(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤)?)[。！？；]/g, '$1\n');
+      // 剩余的中文标点 → 空格
       c = c.replace(/[。！？；]/g, ' ');
       c = c.replace(/[^\dA-Za-z\u4e00-\u9fa5\s,\-，\=＝\.]/g, ' ');
       c = c.replace(/\n/g, '[[[NL]]]');
       c = c.replace(/[\s]{2,}/g, ' ');
       c = c.replace(/\[\[\[NL\]\]\]/g, '\n');
-      c = c.replace(/((?:\d[\s,，.。、+\-*＊\/\\|]*)+)头/g, (match, digits) => {
-        const nums = (digits.match(/\d/g) || []);
-        if (nums.length >= 2) return nums.map(n => n + '头').join('-');
-        return match;
-      });
-      c = c.replace(/((?:\d[\s,，.。、+\-*＊\/\\|]*)+)尾/g, (match, digits) => {
-        const nums = (digits.match(/\d/g) || []);
-        if (nums.length >= 2) return nums.map(n => n + '尾').join('-');
-        return match;
-      });
-      c = c.replace(/\./g, ' ');
-      c = c.replace(/[\s]{2,}/g, ' ');
+      c = c.replace(/((?:\d[\s,，.。、+\-*＊\/\\|]*)+)头/g, (match, digits) => { const nums = (digits.match(/\d/g) || []); if (nums.length >= 2) return nums.map(n => n + '头').join('-'); return match; });
+      c = c.replace(/((?:\d[\s,，.。、+\-*＊\/\\|]*)+)尾/g, (match, digits) => { const nums = (digits.match(/\d/g) || []); if (nums.length >= 2) return nums.map(n => n + '尾').join('-'); return match; });
       return c.trim();
     }
 
+    // ===== 辅助正则和解析 =====
     const KW_RE_STR = `(${KW_LIST.join('|')})`;
     const AMT_RE_STR = '(\\d+|[一二三四五六七八九十百千两]+)';
     const SEP_CHARS = '[\\s\\-,\\.\u3001\uff0c\u3002\uff01\uff1f\uff1b\uff1a\\(\\)\\[\\]{}<>/|@#$%^&*+=]';
@@ -5137,7 +5106,15 @@ function regionToKey(region) {
     const AMT_GROUP = `(${AMT_RE_STR})`;
     const END_AMT_RE = `\\s*(?:(?:${KW_GROUP})\\s*)?${AMT_GROUP}`;
 
-    function extractAmtAndKw(matchedText) { let amt = 0, kw = ''; const re = new RegExp(`(${KW_LIST.join('|')})${SEP}(${AMT_RE_STR})`, 'g'); let m, last = null; while ((m = re.exec(matchedText)) !== null) { last = m; } if (last) { kw = last[1]; amt = toNum(last[2]); } else { const nums = matchedText.match(new RegExp(AMT_RE_STR, 'g')); if (nums) amt = toNum(nums[nums.length - 1]); } return { amt, kw }; }
+    function extractAmtAndKw(matchedText) {
+      let amt = 0, kw = '';
+      const re = new RegExp(`(${KW_LIST.join('|')})${SEP}(${AMT_RE_STR})`, 'g');
+      let m, last = null;
+      while ((m = re.exec(matchedText)) !== null) { last = m; }
+      if (last) { kw = last[1]; amt = toNum(last[2]); }
+      else { const nums = matchedText.match(new RegExp(AMT_RE_STR, 'g')); if (nums) amt = toNum(nums[nums.length - 1]); }
+      return { amt, kw };
+    }
 
     function parseTeMaSegment(content) {
       if (!content.trim()) return null;
@@ -5180,6 +5157,7 @@ function regionToKey(region) {
       return { displayItems, totalCount: cnt, warnings, allNumsArr: allNumsArr };
     }
 
+    // ===== 复杂玩法匹配 =====
     function collectSpecialMatches(text) {
       const Z = ZODIAC;
       const allMatches = [];
@@ -5207,6 +5185,7 @@ function regionToKey(region) {
       }
 
       const multiMatches = []; const lockedIntervals = [];
+
       const reMultiLX = new RegExp(`([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)${SEP}((?:[${Z}]+${SEP_CHARS}+)+[${Z}]+)[\\s]*(?=${KW_GROUP})${KW_GROUP}${SEP}${AMT_GROUP}`, 'g');
       let m;
       while ((m = reMultiLX.exec(text)) !== null) {
@@ -5238,6 +5217,7 @@ function regionToKey(region) {
 
       const addMatch = (re, handler) => { let m; while ((m = re.exec(text)) !== null) { if (isOverlap(m.index, m.index + m[0].length, lockedIntervals)) continue; const info = handler(m); if (info) { allMatches.push({ start: m.index, end: m.index + m[0].length, result: info }); } } };
 
+      // ===== 特肖前缀识别 =====
       addMatch(new RegExp(`特肖${SEP}((?:[${Z}]+${SEP_CHARS}*)+?)[\\s]*${END_AMT_RE}`, 'g'), m => {
         const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null;
         const zPart = m[1]; const zodiacs = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []); if (zodiacs.length === 0) return null;
@@ -5245,6 +5225,7 @@ function regionToKey(region) {
         return { cat: '特肖', nums: zodiacs, amt, cnt: zodiacs.length, total: amt * zodiacs.length, kw: kw || '各', warnings };
       });
 
+      // ===== 包玩法识别 =====
       const BAO_ATTRS = ['红波','蓝波','绿波','红单','红双','蓝单','蓝双','绿单','绿双','红大','红小','蓝大','蓝小','绿大','绿小','单','双','大','小','家禽','野兽'];
       const BAO_ATTRS_SORTED = [...BAO_ATTRS].sort((a, b) => b.length - a.length);
       addMatch(new RegExp(`包${SEP}(${BAO_ATTRS_SORTED.join('|')})\\s*(\\d+)`, 'g'), m => {
@@ -5253,46 +5234,65 @@ function regionToKey(region) {
         return { cat: '包' + attr, nums: [attr], amt, cnt: 1, total: amt, kw: '各' };
       });
 
-      addMatch(new RegExp(`复[式试]?特碰${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = combosNoSort(nums, 2).map(c => c.join('-')); if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '特碰', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
-      addMatch(new RegExp(`复[式试]?[二2]中[二2]${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = combosNoSort(nums, 2).map(c => c.join('-')); if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '二中二', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
-      addMatch(new RegExp(`复[式试]?[三3]中[三3]${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const triples = combosNoSort(nums, 3).map(c => c.join('-')); if (triples.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '三中三', nums: triples, amt, cnt: triples.length, total: amt * triples.length, kw, warnings }; });
-      addMatch(new RegExp(`([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)${SEP}复[式试]?${SEP}((?:[${Z}]+))\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1].replace(/[^0-9二三四五两]/g, '')); if (!k || k < 2 || k > 5) return null; const zPart = m[2].trim(); const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join(''); if (!zChars || zChars.length < k) return null; const comb = zCombosKeepOrder(zChars, k); const warnings = []; if (!kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
-      addMatch(new RegExp(`([二三四五2345])(?:连尾|尾连)${SEP}复[式试]?${SEP}((?:\\d+尾${SEP_CHARS}+)+\\d+尾)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1]); if (!k || k < 2 || k > 5) return null; const tailPart = m[2]; const digits = (tailPart.match(/\d/g) || []); if (digits.length < k) return null; const comb = tailCKeepOrder(digits.join(','), k); const warnings = []; if (!kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
-      addMatch(new RegExp(`复[式试]?([二三四五2345两])?(?:连肖|平连|连)${SEP}((?:[${Z}]+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const kDigit = m[1] ? toNum(m[1].replace(/[^0-9二三四五两]/g, '')) : null; const zPart = m[2].trim(); const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join(''); if (!zChars || zChars.length < 2) return null; const k = kDigit || Math.min(zChars.length, 5); if (k < 2 || k > 5 || zChars.length < k) return null; const comb = zCombosKeepOrder(zChars, k); const warnings = []; if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
-      addMatch(new RegExp(`复[式试]?([二三四五2345])?(?:连尾|尾连)${SEP}((?:\\d+${SEP_CHARS}*尾${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const kDigit = m[1] ? toNum(m[1]) : null; const tailPart = m[2]; const digits = (tailPart.match(/\d/g) || []); const k = kDigit || Math.min(digits.length, 5); if (k < 2 || k > 5 || digits.length < k) return null; const comb = tailCKeepOrder(digits.join(','), k); const warnings = []; if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+      // ===== 特碰：碰法 =====
       addMatch(new RegExp(`特碰${SEP}((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*)${SEP_CHARS}*(?:碰)${SEP_CHARS}*((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*?)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const leftPart = m[1], rightPart = m[2]; return handleDragMatch(leftPart, rightPart, amt, kw, '特碰'); });
-      addMatch(new RegExp(`[二2]中[二2]${SEP}((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*)${SEP_CHARS}*(?:拖|托)${SEP_CHARS}*((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*?)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const leftPart = m[1], rightPart = m[2]; return handleDragMatch(leftPart, rightPart, amt, kw, '二中二'); });
-      addMatch(new RegExp(`[二2]中[二2]${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = []; const pr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let pm; while ((pm = pr.exec(numPart)) !== null) { pairs.push(pm[1] + '-' + pm[2]); } if (pairs.length === 0) { const nums = extractNums(numPart); if (nums.length % 2 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与二中二不匹配`); return { cat: '二中二', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 2).forEach(c => pairs.push(c.join('-'))); } if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '二中二', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
-      addMatch(new RegExp(`特碰${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = []; const pr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let pm; while ((pm = pr.exec(numPart)) !== null) { pairs.push(pm[1] + '-' + pm[2]); } if (pairs.length === 0) { const nums = extractNums(numPart); if (nums.length % 2 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与特碰不匹配`); return { cat: '特碰', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 2).forEach(c => pairs.push(c.join('-'))); } if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '特碰', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
-      addMatch(new RegExp(`[三3]中[三3]${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const triples = []; const tr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let tm; while ((tm = tr.exec(numPart)) !== null) { triples.push(tm[1] + '-' + tm[2] + '-' + tm[3]); } if (triples.length === 0) { const nums = extractNums(numPart); if (nums.length % 3 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与三中三不匹配`); return { cat: '三中三', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 3).forEach(c => triples.push(c.join('-'))); } if (triples.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '三中三', nums: triples, amt, cnt: triples.length, total: amt * triples.length, kw, warnings }; });
-      addMatch(new RegExp(`((?:[${Z}]+))[\\s]*(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)${SEP}([二三四五2345两])\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const zPart = m[1]; const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join(''); const k = toNum(m[2].replace(/[^0-9二三四五两]/g, '')); if (!k || k < 2 || k > 5) return null; const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*[鼠牛虎兔龙蛇马羊猴鸡狗猪]+/.test(afterEnd)) return null; if (zChars.length !== k) { warnings.push(`${zChars}：连肖数(${k})与生肖数(${zChars.length})不匹配`); return { cat: k + '连肖', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const groups = zPart.split(new RegExp(SEP_CHARS + '+')).filter(g => g.trim().length >= k); const results = []; for (const zg of groups) { results.push(...zCombosKeepOrder(zg, k)); } const cnt = results.length || 0; if (cnt > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: results, amt, cnt, total: amt * cnt, kw, warnings }; });
-      addMatch(new RegExp(`((?:\\d+尾${SEP_CHARS}+)+\\d+尾)[\\s]*(?:连尾|尾连)${SEP}([二三四五2345])\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tailPart = m[1]; const digits = (tailPart.match(/\d/g) || []); const k = toNum(m[2]); if (!k || k < 2 || k > 5) return null; const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*\d+尾/.test(afterEnd)) return null; if (digits.length !== k) { warnings.push(`${digits.map(d => d + '尾').join('')}：连尾数(${k})与尾数数量(${digits.length})不匹配`); return { cat: k + '连尾', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const comb = tailCKeepOrder(digits.join(','), k); if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
-      addMatch(new RegExp(`([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)[\\s]*((?:[${Z}]+(?:${SEP_CHARS}+[${Z}]+)*))${SEP}(?:(?=${KW_GROUP})${KW_GROUP}${SEP}${AMT_GROUP}|${END_AMT_RE})`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1].replace(/[^0-9二三四五两]/g, '')); if (!k || k < 2 || k > 5) return null; const zPart = m[2]; const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*[鼠牛虎兔龙蛇马羊猴鸡狗猪]/.test(afterEnd)) return null; const groups = zPart.split(new RegExp(SEP_CHARS + '+')).filter(g => g.trim().length > 0); const validCombos = []; const invalidGroups = []; for (const g of groups) { const zs = g.trim(); if (zs.length === k) { validCombos.push(...zCombosKeepOrder(zs, k)); } else { invalidGroups.push(zs); } } if (invalidGroups.length > 0) { invalidGroups.forEach(zs => { warnings.push(`${zs}：连肖数(${k})与生肖数(${zs.length})不匹配`); }); } if (validCombos.length > 0) { const cnt = validCombos.length; if (cnt > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: validCombos, amt, cnt, total: amt * cnt, kw, warnings }; } else { return { cat: k + '连肖', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } });
-      addMatch(new RegExp(`([二三四五2345])(?:连尾|尾连)[\\s]*((?:\\d+${SEP_CHARS}*尾(?:${SEP_CHARS}+\\d+${SEP_CHARS}*尾)*)+)${SEP}(?:(?=${KW_GROUP})${KW_GROUP}${SEP}${AMT_GROUP}|${END_AMT_RE})`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1]); if (!k || k < 2 || k > 5) return null; const tailPart = m[2]; const digits = (tailPart.match(/\d/g) || []); const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*\d+尾/.test(afterEnd)) return null; if (digits.length !== k) { warnings.push(`${digits.map(d => d + '尾').join('')}：连尾数(${k})与尾数数量(${digits.length})不匹配`); return { cat: k + '连尾', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const comb = tailCKeepOrder(digits.join(','), k); if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
-      addMatch(/([五六七八九十]|十一|十二|[5-9]|1[0-2])不[中出]\s*((?:\d{1,2}[\s,\-，、./]*)+)\s*[下共买个—来=＝\/各组四各]*\s*(\d+|[一二三四五六七八九十百千两]+)/g, m => { const cn = { 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 十一: 11, 十二: 12 }; let k = cn[m[1]] || parseInt(m[1]); if (!k || k < 5 || k > 12) return null; const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[2]); const invalidNums = findInvalidNums(m[2]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length !== k) { warnings.push(`号码数(${nums.length})与不中数(${k})不匹配`); return { cat: k + '不中', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const cbs = combos(nums, k).map(c => c.join('-')); if (cbs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '不中', nums: cbs, amt, cnt: cbs.length, total: amt * cbs.length, kw, warnings }; });
-      addMatch(new RegExp(`(?:平特(?:一肖|肖)?|[1一]肖中|平肖|平码[肖]?|一肖|独肖)${SEP}((?:[${Z}]+${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const zs = extractZodiacs(m[1]); const warnings = []; if (zs.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特肖', nums: zs, amt, cnt: zs.length, total: amt * zs.length, kw, warnings }; });
-      addMatch(new RegExp(`(?:平特(?:一尾|尾)?|平尾|尾中)${SEP}((?:\\d+尾${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tails = (m[1].match(/\d/g) || []).map(d => d + '尾'); const warnings = []; if (tails.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特尾', nums: tails, amt, cnt: tails.length, total: amt * tails.length, kw, warnings }; });
-      addMatch(new RegExp(`(?:平码|独平)${SEP}((?:\\d+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '平码', nums, amt, cnt: nums.length, total: amt * nums.length, kw, warnings }; });
 
-      // 新增："一"和"/"分隔的组合对识别
-      addMatch(new RegExp('二中二\\s*:\\s*((?:\\d{1,2}\\s*一\\s*\\d{1,2}\\s*\\/\\s*)*\\d{1,2}\\s*一\\s*\\d{1,2})\\s*各\\s*(\\d+)', 'g'), m => {
-        const full = m[0]; const combosStr = m[1]; const amt = toNum(m[2]);
-        if (!amt || amt <= 0) return null;
-        const pairs = combosStr.split('/').map(p => p.trim()).filter(p => p);
-        const leftNums = []; const rightNums = [];
-        pairs.forEach(p => {
-          const parts = p.split('一').map(n => n.trim());
-          if (parts.length === 2) {
-            const a = parseInt(parts[0]); const b = parseInt(parts[1]);
-            if (a >= 1 && a <= 49 && b >= 1 && b <= 49) {
-              leftNums.push(String(a).padStart(2, '0'));
-              rightNums.push(String(b).padStart(2, '0'));
-            }
-          }
-        });
-        if (leftNums.length === 0 || rightNums.length === 0) return null;
-        return handleDragMatch(leftNums.join(' '), rightNums.join(' '), amt, '各', '二中二');
-      });
+      // 二中二拖法
+      addMatch(new RegExp(`[二2]中[二2]${SEP}((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*)${SEP_CHARS}*(?:拖|托)${SEP_CHARS}*((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*?)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const leftPart = m[1], rightPart = m[2]; return handleDragMatch(leftPart, rightPart, amt, kw, '二中二'); });
+
+      // 复式二中二
+      addMatch(new RegExp(`复[式试]?[二2]中[二2]${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = combosNoSort(nums, 2).map(c => c.join('-')); if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '二中二', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
+
+      // 非复式二中二
+      addMatch(new RegExp(`[二2]中[二2]${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = []; const pr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let pm; while ((pm = pr.exec(numPart)) !== null) { pairs.push(pm[1] + '-' + pm[2]); } if (pairs.length === 0) { const nums = extractNums(numPart); if (nums.length % 2 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与二中二不匹配`); return { cat: '二中二', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 2).forEach(c => pairs.push(c.join('-'))); } if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '二中二', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
+
+      // ===== 特碰：复式 =====
+      addMatch(new RegExp(`复[式试]?特碰${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = combosNoSort(nums, 2).map(c => c.join('-')); if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '特碰', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
+
+      // ===== 特碰：数字直接配对 =====
+      addMatch(new RegExp(`特碰${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = []; const pr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let pm; while ((pm = pr.exec(numPart)) !== null) { pairs.push(pm[1] + '-' + pm[2]); } if (pairs.length === 0) { const nums = extractNums(numPart); if (nums.length % 2 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与特碰不匹配`); return { cat: '特碰', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 2).forEach(c => pairs.push(c.join('-'))); } if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '特碰', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
+
+      // 复式三中三
+      addMatch(new RegExp(`复[式试]?[三3]中[三3]${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const triples = combosNoSort(nums, 3).map(c => c.join('-')); if (triples.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '三中三', nums: triples, amt, cnt: triples.length, total: amt * triples.length, kw, warnings }; });
+
+      // 非复式三中三
+      addMatch(new RegExp(`[三3]中[三3]${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const triples = []; const tr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let tm; while ((tm = tr.exec(numPart)) !== null) { triples.push(tm[1] + '-' + tm[2] + '-' + tm[3]); } if (triples.length === 0) { const nums = extractNums(numPart); if (nums.length % 3 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与三中三不匹配`); return { cat: '三中三', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 3).forEach(c => triples.push(c.join('-'))); } if (triples.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '三中三', nums: triples, amt, cnt: triples.length, total: amt * triples.length, kw, warnings }; });
+
+      // 复式连肖
+      addMatch(new RegExp(`([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)${SEP}复[式试]?${SEP}((?:[${Z}]+))\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1].replace(/[^0-9二三四五两]/g, '')); if (!k || k < 2 || k > 5) return null; const zPart = m[2].trim(); const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join(''); if (!zChars || zChars.length < k) return null; const comb = zCombosKeepOrder(zChars, k); const warnings = []; if (!kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+
+      // 非复式连肖（生肖串 + 连肖 + N）
+      addMatch(new RegExp(`((?:[${Z}]+))[\\s]*(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)${SEP}([二三四五2345两])\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const zPart = m[1]; const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join(''); const k = toNum(m[2].replace(/[^0-9二三四五两]/g, '')); if (!k || k < 2 || k > 5) return null; const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*[鼠牛虎兔龙蛇马羊猴鸡狗猪]+/.test(afterEnd)) return null; if (zChars.length !== k) { warnings.push(`${zChars}：连肖数(${k})与生肖数(${zChars.length})不匹配`); return { cat: k + '连肖', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const groups = zPart.split(new RegExp(SEP_CHARS + '+')).filter(g => g.trim().length >= k); const results = []; for (const zg of groups) { results.push(...zCombosKeepOrder(zg, k)); } const cnt = results.length || 0; if (cnt > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: results, amt, cnt, total: amt * cnt, kw, warnings }; });
+
+      // 复式连尾
+      addMatch(new RegExp(`([二三四五2345])(?:连尾|尾连)${SEP}复[式试]?${SEP}((?:\\d+尾${SEP_CHARS}+)+\\d+尾)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1]); if (!k || k < 2 || k > 5) return null; const tailPart = m[2]; const digits = (tailPart.match(/\d/g) || []); if (digits.length < k) return null; const comb = tailCKeepOrder(digits.join(','), k); const warnings = []; if (!kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+
+      // 非复式连尾（尾数串 + 连尾 + N）
+      addMatch(new RegExp(`((?:\\d+尾${SEP_CHARS}+)+\\d+尾)[\\s]*(?:连尾|尾连)${SEP}([二三四五2345])\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tailPart = m[1]; const digits = (tailPart.match(/\d/g) || []); const k = toNum(m[2]); if (!k || k < 2 || k > 5) return null; const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*\d+尾/.test(afterEnd)) return null; if (digits.length !== k) { warnings.push(`${digits.map(d => d + '尾').join('')}：连尾数(${k})与尾数数量(${digits.length})不匹配`); return { cat: k + '连尾', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const comb = tailCKeepOrder(digits.join(','), k); if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+
+      // 宽松复式连肖
+      addMatch(new RegExp(`复[式试]?([二三四五2345两])?(?:连肖|平连|连)${SEP}((?:[${Z}]+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const kDigit = m[1] ? toNum(m[1].replace(/[^0-9二三四五两]/g, '')) : null; const zPart = m[2].trim(); const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join(''); if (!zChars || zChars.length < 2) return null; const k = kDigit || Math.min(zChars.length, 5); if (k < 2 || k > 5 || zChars.length < k) return null; const comb = zCombosKeepOrder(zChars, k); const warnings = []; if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+
+      // 宽松复式连尾
+      addMatch(new RegExp(`复[式试]?([二三四五2345])?(?:连尾|尾连)${SEP}((?:\\d+${SEP_CHARS}*尾${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const kDigit = m[1] ? toNum(m[1]) : null; const tailPart = m[2]; const digits = (tailPart.match(/\d/g) || []); const k = kDigit || Math.min(digits.length, 5); if (k < 2 || k > 5 || digits.length < k) return null; const comb = tailCKeepOrder(digits.join(','), k); const warnings = []; if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+
+      // N不中
+      addMatch(/([五六七八九十]|十一|十二|[5-9]|1[0-2])不[中出]\s*((?:\d{1,2}[\s,\-，、./]*)+)\s*[下共买个—来=＝\/各组四各]*\s*(\d+|[一二三四五六七八九十百千两]+)/g, m => { const cn = { 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 十一: 11, 十二: 12 }; let k = cn[m[1]] || parseInt(m[1]); if (!k || k < 5 || k > 12) return null; const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[2]); const invalidNums = findInvalidNums(m[2]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length !== k) { warnings.push(`号码数(${nums.length})与不中数(${k})不匹配`); return { cat: k + '不中', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const cbs = combos(nums, k).map(c => c.join('-')); if (cbs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '不中', nums: cbs, amt, cnt: cbs.length, total: amt * cbs.length, kw, warnings }; });
+
+      // 非复式连肖（N连肖 + 生肖串，多组匹配）
+      addMatch(new RegExp(`([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)[\\s]*((?:[${Z}]+(?:${SEP_CHARS}+[${Z}]+)*))${SEP}(?:(?=${KW_GROUP})${KW_GROUP}${SEP}${AMT_GROUP}|${END_AMT_RE})`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1].replace(/[^0-9二三四五两]/g, '')); if (!k || k < 2 || k > 5) return null; const zPart = m[2]; const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*[鼠牛虎兔龙蛇马羊猴鸡狗猪]/.test(afterEnd)) return null; const groups = zPart.split(new RegExp(SEP_CHARS + '+')).filter(g => g.trim().length > 0); const validCombos = []; const invalidGroups = []; for (const g of groups) { const zs = g.trim(); if (zs.length === k) { validCombos.push(...zCombosKeepOrder(zs, k)); } else { invalidGroups.push(zs); } } if (invalidGroups.length > 0) { invalidGroups.forEach(zs => { warnings.push(`${zs}：连肖数(${k})与生肖数(${zs.length})不匹配`); }); } if (validCombos.length > 0) { const cnt = validCombos.length; if (cnt > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连肖', nums: validCombos, amt, cnt, total: amt * cnt, kw, warnings }; } else { return { cat: k + '连肖', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } });
+
+      // 非复式连尾（N连尾 + 尾数串，多组匹配）
+      addMatch(new RegExp(`([二三四五2345])(?:连尾|尾连)[\\s]*((?:\\d+${SEP_CHARS}*尾(?:${SEP_CHARS}+\\d+${SEP_CHARS}*尾)*)+)${SEP}(?:(?=${KW_GROUP})${KW_GROUP}${SEP}${AMT_GROUP}|${END_AMT_RE})`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const k = toNum(m[1]); if (!k || k < 2 || k > 5) return null; const tailPart = m[2]; const digits = (tailPart.match(/\d/g) || []); const warnings = []; const afterEnd = text.substring(m.index + m[0].length); if (!kw && /^\s*\d+尾/.test(afterEnd)) return null; if (digits.length !== k) { warnings.push(`${digits.map(d => d + '尾').join('')}：连尾数(${k})与尾数数量(${digits.length})不匹配`); return { cat: k + '连尾', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const comb = tailCKeepOrder(digits.join(','), k); if (comb.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: k + '连尾', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw, warnings }; });
+
+      // 平特肖
+      addMatch(new RegExp(`(?:平特(?:一肖|肖)?|[1一]肖中|平肖|平码[肖]?|一肖|独肖)${SEP}((?:[${Z}]+${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const zs = extractZodiacs(m[1]); const warnings = []; if (zs.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特肖', nums: zs, amt, cnt: zs.length, total: amt * zs.length, kw, warnings }; });
+
+      // 平特尾
+      addMatch(new RegExp(`(?:平特(?:一尾|尾)?|平尾|尾中)${SEP}((?:\\d+尾${SEP_CHARS}*)+)\\s*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const tails = (m[1].match(/\d/g) || []).map(d => d + '尾'); const warnings = []; if (tails.length >= 2 && !kw) { warnings.push('缺少金额关键字'); } return { cat: '平特尾', nums: tails, amt, cnt: tails.length, total: amt * tails.length, kw, warnings }; });
+
+      // 平码
+      addMatch(new RegExp(`(?:平码|独平)${SEP}((?:\\d+${SEP_CHARS}*)+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; if (nums.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '平码', nums, amt, cnt: nums.length, total: amt * nums.length, kw, warnings }; });
 
       allMatches.push(...multiMatches);
       allMatches.sort((a, b) => a.start - b.start);
@@ -5301,10 +5301,12 @@ function regionToKey(region) {
       return deduped;
     }
 
+    // ===== 单行解析 =====
     function processOneLine(line) {
       if (!line.trim()) return [];
 
-      const defaultSuffixes = ['米', '元', '块', '角', '分', '厘'];
+      // ===== 号码-金额对识别（优先处理） =====
+      const defaultSuffixes = ['米', '元', '块', '角', '分', '厘', '眯', '咪', '井', '#', '快', '斤'];
       const userSuffixes = getCustomAmountSuffixes();
       const combinedSuffixes = [...new Set([...defaultSuffixes, ...userSuffixes])];
       const suffixList = combinedSuffixes.length ? combinedSuffixes.join('|') : '';
@@ -5323,14 +5325,16 @@ function regionToKey(region) {
           return [{ cat: '特码', nums: [num], amt, cnt: 1, total: amt, kw: '各', warnings: [] }];
         }
       }
+      // ===== 号码-金额对识别结束 =====
 
       const ZODIAC_SET = new Set('鼠牛虎兔龙蛇马羊猴鸡狗猪'.split(''));
 
+      // ===== 放宽 tryMatchTeXiao =====
       function tryMatchTeXiao(content) {
         if (!content || !content.trim()) return null;
         if (/特码/.test(content)) return null;
         const trimmed = content.trim();
-        const shxMatch = trimmed.match(new RegExp(`(.+?)(各肖|各(?!数|组|码|注|下|买))\\s*(\\d+)`));
+        const shxMatch = trimmed.match(new RegExp(`(.+?)(各肖|各(?!数|号|组|码|注|下|买))\\s*(\\d+)`));
         if (!shxMatch) return null;
         const rawContent = shxMatch[1]; const amtRaw = parseInt(shxMatch[3]) || 0; const kw = shxMatch[2] || '';
         if (amtRaw <= 0) return null;
@@ -5351,7 +5355,8 @@ function regionToKey(region) {
           let subMatch;
           while ((subMatch = kwReLocal.exec(content)) !== null) {
             const subContent = content.substring(subLast, subMatch.index);
-
+            
+            // ===== 范围号码识别 =====
             if (subContent.includes('到') || (subMatch[0] && subMatch[0].includes('到'))) {
               const combined = subContent + (subMatch ? subMatch[0] : '');
               const rangeMatch = combined.match(/(\d{1,2})\s*到\s*(\d{1,2})/);
@@ -5364,7 +5369,7 @@ function regionToKey(region) {
                 subLast = subMatch.index + subMatch[0].length; continue;
               }
             }
-
+            
             const teXiaoResult = tryMatchTeXiao(subContent + subMatch[0]);
             if (teXiaoResult) { results.push(teXiaoResult); }
             else { const seg = parseTeMaSegment(subContent); if (seg) { const amt = toNum(subMatch[2]); const kw = subMatch[1]; const cnt = seg.allNumsArr ? seg.allNumsArr.length : seg.totalCount; results.push({ cat: '特码', nums: seg.displayItems, amt, cnt: cnt, total: amt * cnt, kw, warnings: seg.warnings || [] }); } }
@@ -5382,7 +5387,8 @@ function regionToKey(region) {
         let subMatch;
         while ((subMatch = kwReLocal.exec(content)) !== null) {
           const subContent = content.substring(subLast, subMatch.index);
-
+          
+          // ===== 范围号码识别 =====
           if (subContent.includes('到') || (subMatch[0] && subMatch[0].includes('到'))) {
             const combined = subContent + (subMatch ? subMatch[0] : '');
             const rangeMatch = combined.match(/(\d{1,2})\s*到\s*(\d{1,2})/);
@@ -5395,7 +5401,7 @@ function regionToKey(region) {
               subLast = subMatch.index + subMatch[0].length; continue;
             }
           }
-
+          
           const teXiaoResult = tryMatchTeXiao(subContent + subMatch[0]);
           if (teXiaoResult) { results.push(teXiaoResult); }
           else { const seg = parseTeMaSegment(subContent); if (seg) { const amt = toNum(subMatch[2]); const kw = subMatch[1]; const cnt = seg.allNumsArr ? seg.allNumsArr.length : seg.totalCount; results.push({ cat: '特码', nums: seg.displayItems, amt, cnt: cnt, total: amt * cnt, kw, warnings: seg.warnings || [] }); } }
@@ -5441,6 +5447,7 @@ function regionToKey(region) {
       return results;
     }
 
+    // ===== 辅助函数 =====
     function containsDictElement(str) {
       if (!str) return false;
       const nums = str.match(/\d+/g);
@@ -5466,12 +5473,16 @@ function regionToKey(region) {
       return { numbers: [], zodiacs: [], amount: 0 };
     }
 
+    // ===== 增强版继承函数 =====
     function applyInlineInheritance(lineResults, lastInheritablePlay = null) {
       if (!lineResults || lineResults.length === 0) return { results: lineResults, lastPlay: lastInheritablePlay };
+
       const inheritableCats = { '平特肖': { type: 'zodiac', count: 1 }, '平特尾': { type: 'tail', count: 1 } };
       for (let i = 2; i <= 5; i++) { inheritableCats[i + '连肖'] = { type: 'zodiac', count: i }; inheritableCats[i + '连尾'] = { type: 'tail', count: i }; }
+
       let inheritedPlay = lastInheritablePlay;
       for (const r of lineResults) { if (r.cat !== '__unrecognized__' && inheritableCats[r.cat]) { inheritedPlay = { cat: r.cat, kw: r.kw || '', ...inheritableCats[r.cat] }; break; } }
+
       const processed = [];
       for (const r of lineResults) {
         if (inheritedPlay && inheritedPlay.type === 'zodiac' && inheritedPlay.count >= 2 && r.cat === '特肖') {
@@ -5484,15 +5495,19 @@ function regionToKey(region) {
         }
         if (r.cat !== '__unrecognized__') { processed.push(r); continue; }
         if (!inheritedPlay) { processed.push(r); continue; }
+
         const raw = (r.rawLine || '').trim(); if (!raw) { processed.push(r); continue; }
         const amtMatch = raw.match(/(\d+)\s*$/); if (!amtMatch) { processed.push(r); continue; }
         const amt = parseInt(amtMatch[1]) || 0; if (amt <= 0) { processed.push(r); continue; }
         let content = raw.substring(0, amtMatch.index).trim(); if (!content) { processed.push(r); continue; }
+
         let contentKw = ''; for (const kw of KW_LIST) { if (content.includes(kw)) { contentKw = kw; break; } }
         const inheritedKw = inheritedPlay.kw || '';
         if (contentKw !== inheritedKw) { r.warnings = [`关键字不一致（需要"${inheritedKw || '无关键字'}"，实际"${contentKw || '无关键字'}"）`]; processed.push(r); continue; }
+
         let cleanContent = content; if (contentKw) { cleanContent = content.replace(new RegExp(contentKw), '').trim(); }
         cleanContent = cleanContent.replace(/[\s,，.。、+\-*＊\/\\|]+/g, '-');
+
         let matched = false;
         if (inheritedPlay.type === 'zodiac') {
           let items = cleanContent.split('-').filter(i => i.trim());
@@ -5507,15 +5522,20 @@ function regionToKey(region) {
         }
         if (!matched) { r.warnings = [`格式不匹配（需要${inheritedPlay.count}个${inheritedPlay.type === 'zodiac' ? '生肖' : '尾数'}）`]; processed.push(r); }
       }
+
       let outgoingPlay = lastInheritablePlay;
       for (let i = lineResults.length - 1; i >= 0; i--) { const r = lineResults[i]; if (r.cat !== '__unrecognized__' && inheritableCats[r.cat]) { outgoingPlay = { cat: r.cat, kw: r.kw || '', ...inheritableCats[r.cat] }; break; } }
       return { results: processed, lastPlay: outgoingPlay };
     }
 
-    const REGION_KEYWORDS = { 'macau': ['澳', '奥', '澳门', '奥门', '门', 'mc', 'MC', 'Mc'], 'hongkong': ['港', '香', '香港', 'hk', 'HK', 'Hk'], 'yuegang': ['粤', '粤港', 'yg', 'YG', 'Yg'] };
-    const REGION_LABELS = { 'macau': '澳门', 'hongkong': '香港', 'yuegang': '粤港' };
+    // ===== 地区提取 =====
     let currentRegion = 'macau';
     window._dotRegion = 'auto';
+
+    const REGION_KEYWORDS = { 'macau': ['澳', '奥', '澳门', '奥门', '门', 'mc', 'MC', 'Mc'], 'hongkong': ['港', '香', '香港', 'hk', 'HK', 'Hk'], 'yuegang': ['粤', '粤港', 'yg', 'YG', 'Yg'] };
+    const REGION_LABELS = { 'macau': '澳门', 'hongkong': '香港', 'yuegang': '粤港' };
+
+    function getCustomAmountSuffixes() { return []; }
 
     function extractRegion(line) {
       const allKeywords = [];
@@ -5532,15 +5552,15 @@ function regionToKey(region) {
       return null;
     }
 
-    function getCustomAmountSuffixes() { return []; }
-
+    // ===== 识别入口 =====
     function performRecognition(text) {
       const resultDiv = document.getElementById('orderResult');
       if (!text || !text.trim()) { if (resultDiv) resultDiv.innerHTML = ''; window._pureOrderLines = []; window._pureOrderRegions = []; window._cachedMaxLossData = []; updateOrderTotalDisplay(); updateMaxLossDisplay(); return; }
       let processedText = preprocess(text);
-      processedText = applyReplacePresets(processedText);
-      const lines = processedText.split('\n'); const allResults = []; const lineRegions = [];
+      const lines = processedText.split('\n');
+      const allResults = []; const lineRegions = [];
       let currentLineRegion = currentRegion; const dotRegion = window._dotRegion || 'auto'; let lastInheritablePlay = null;
+
       for (const line of lines) {
         if (!line.trim()) { continue; }
         let orderLine = line;
@@ -5548,22 +5568,27 @@ function regionToKey(region) {
         else { const extracted = extractRegion(line); if (extracted) { currentLineRegion = extracted.region; orderLine = extracted.remaining; } }
         lineRegions.push(currentLineRegion);
         if (!orderLine.trim()) continue;
-        const parsed = processOneLine(orderLine); let lineResults = [];
+
+        const parsed = processOneLine(orderLine);
+        let lineResults = [];
         if (parsed.length === 0) { if (containsDictElement(orderLine)) { lineResults.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字或有效玩法'], rawLine: orderLine.trim() }); } }
         else { lineResults.push(...parsed); }
         if (lineResults.length > 0) { const inheritResult = applyInlineInheritance(lineResults, lastInheritablePlay); lineResults = inheritResult.results; lastInheritablePlay = inheritResult.lastPlay; lineResults.forEach(r => { r.region = currentLineRegion; }); allResults.push(...lineResults); }
       }
+
       const mergedArray = allResults.map(r => ({ category: r.cat, numbers: r.nums, unitAmount: r.amt, totalCount: r.cnt, totalAmount: r.total, kw: r.kw || '', warnings: r.warnings || [], rawLine: r.rawLine || '', region: r.region || currentRegion, _inherited: r._inherited || false }));
       if (resultDiv) { if (mergedArray.length === 0) { resultDiv.innerHTML = text ? `<div class="result-line">${text}</div>` : ''; window._pureOrderLines = []; window._pureOrderRegions = []; window._cachedMaxLossData = []; } else { displayResults(mergedArray, resultDiv); } }
       updateOrderTotalDisplay(); updateMaxLossDisplay();
     }
 
+    // ===== 结果展示 =====
     function displayResults(rs, container) {
       if (!container) container = document.getElementById('orderResult');
       if (!container) return;
       if (rs.length === 0) { container.innerHTML = ''; window._pureOrderLines = []; window._pureOrderRegions = []; window._cachedMaxLossData = []; return; }
       let total = 0; let html = ''; const pureLines = []; const pureRegions = []; const maxLossData = [];
       const regionColorMap = { 'macau': '#e74c3c', 'hongkong': '#3498db', 'yuegang': '#27ae60' };
+
       for (const r of rs) {
         if (r.category === '__unrecognized__') {
           const regionLabel = REGION_LABELS[r.region] || ''; const warnText = (r.warnings && r.warnings.length) ? r.warnings.join('；') : '缺少金额关键字或有效玩法';
@@ -5584,11 +5609,7 @@ function regionToKey(region) {
         const pureNumStr = formatNums(r.category, r.numbers); pureLines.push(`${r.category}:${pureNumStr} ${kwDisplay} ${Math.round(r.unitAmount)}`); pureRegions.push(r.region);
         if (r.category === '特码' || r.category === '特肖') { maxLossData.push({ category: r.category, numbers: r.numbers, unitAmount: Math.round(r.unitAmount) }); }
       }
-      container.innerHTML = html;
-      window._pureOrderLines = pureLines;
-      window._pureOrderRegions = pureRegions;
-      window._cachedMaxLossData = maxLossData;
-      window._recognizedTotal = total;
+      container.innerHTML = html; window._pureOrderLines = pureLines; window._pureOrderRegions = pureRegions; window._cachedMaxLossData = maxLossData;
     }
 
     function formatNums(cat, numsArr) {
@@ -5597,6 +5618,25 @@ function regionToKey(region) {
       if (cat.startsWith('包')) return numsArr.join('-');
       if (cat.includes('连肖')) return numsArr.map(g => { if (g.includes('-')) return '(' + g + ')'; return '(' + g.split('').join('-') + ')'; }).join(' ');
       return numsArr.map(g => `(` + g + `)`).join(' ');
+    }
+
+    // ===== 合计与行数计算 =====
+    function updateOrderTotalDisplay(){
+      const re=document.getElementById('orderResult'); const box=document.getElementById('orderTotalAmountBox'); const span=document.getElementById('orderTotalAmount'); const lineCountSpan=document.getElementById('orderLineCount');
+      if(!re||!box||!span)return;
+      const pureLines = window._pureOrderLines || [];
+      if(pureLines.length === 0){ box.style.display='none'; if(lineCountSpan) lineCountSpan.style.display='none'; return; }
+      let total=0; let validLineCount=pureLines.length;
+      pureLines.forEach(line=>{
+        if(line.startsWith('特肖:')){ const match = line.match(/^特肖:(.+?)\s+各\s*(\d+)$/); if(match){ const zodiacs = match[1].split('-').filter(z => z.trim()); const amt = parseInt(match[2]) || 0; total += zodiacs.length * amt; } }
+        else if(line.startsWith('特碰:')){ const match = line.match(/^特碰:(.+?)\s+各\s*(\d+)$/); if(match){ const cleaned = match[1].replace(/[()]/g, ''); const groups = cleaned.split(/\s+/).filter(c => c.trim()); const amtRaw = parseInt(match[2]) || 0; total += groups.length * amtRaw; } }
+        else if(line.startsWith('包')){ const match = line.match(/^包(.+?):(.+?)\s+各\s*(\d+)$/); if(match){ const amtRaw = parseInt(match[3]) || 0; total += amtRaw; } }
+        else if(line.startsWith('特码:')){ const{numbers,amount}=countItemsInLine(line); const cnt=numbers.length; if(cnt>0 && amount>0) total+=cnt*amount; }
+        else { const match = line.match(/^(.+?):(.+?)\s+各\s*(\d+)$/); if(match){ const playType = match[1]; const content = match[2]; const amt = parseInt(match[3])||0; if(playType==='平特肖'||playType==='平特尾'||playType==='平码'){ const items = content.split('-').filter(i=>i.trim()); total += items.length * amt; } else { const cleaned = content.replace(/[()]/g, ''); const groups = cleaned.split(/\s+/).filter(c=>c.trim()); total += groups.length * amt; } } }
+      });
+      span.textContent=total;
+      if(total>0){ box.style.display='inline-flex'; if(lineCountSpan){ lineCountSpan.innerHTML = '<span style="color:#000;">' + validLineCount + '</span>行'; lineCountSpan.style.display = 'inline'; } }
+      else { box.style.display='none'; if(lineCountSpan) lineCountSpan.style.display='none'; }
     }
 
     function getInputArea() { return document.getElementById('sourceOrderInput'); }
