@@ -474,7 +474,7 @@
     </div>
 </div>
 <script>
-    // ===== 通用区域转换函数 =====
+// ===== 通用区域转换函数 =====
 function regionToKey(region) {
     const map = { '澳门': 'macau', '香港': 'hongkong', '粤港': 'yuegang' };
     return map[region] || 'macau';
@@ -1913,7 +1913,7 @@ function regionToKey(region) {
     }
 
     function updateRowSelection() { document.querySelectorAll('#orderDetailTbody .order-row').forEach(row => { const realIdx = parseInt(row.dataset.realIndex); row.classList.toggle('selected', selectedOrderIndices.has(realIdx)); }); }
-    // ========= 配置弹窗逻辑 =========
+// ========= 配置弹窗逻辑 =========
     (function initConfigModal(){
         let isConfigDirty = false;
 
@@ -2065,7 +2065,7 @@ function regionToKey(region) {
         document.addEventListener('keydown',e=>{if(e.key==='Delete'&&document.getElementById('applicant-content').classList.contains('active')){if(document.activeElement&&document.activeElement.tagName==='INPUT')return;window.deleteApplicant();}});
         window.renderApplicants();
     })();
-    // ===================== 页面渲染函数 =====================
+// ===================== 页面渲染函数 =====================
 
     // 辅助函数：将订单信息中的中奖 token 高亮为红色
     function highlightOrderInfo(orderInfo, winStatus, betType, drawNums) {
@@ -4474,7 +4474,7 @@ function regionToKey(region) {
         // 剩余空间不便用 Blob 估算，保留原值或显示 --
         if (remainingEl) remainingEl.textContent = '--';
     }
-        const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
+const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     window._filterDuijiangDone = false;
     function switchPage(pageName){
@@ -5057,7 +5057,7 @@ function regionToKey(region) {
       c = c.replace(/[\uFF01-\uFF5E]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
       c = c.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       c = c.replace(/[oO]/g, '0');
-      c = c.replace(/[liI！!]/g, '1');
+      c = c.replace(/[lI]/g, '1');          // 移除 ！和 !，不再将感叹号替换为 1
       const reps = {
         夏式: '复式', 復式: '复式', 复制: '复式', 復制: '复式', 复习: '复式', 复试: '复式', 复示: '复式', 覆式: '复式', 複试: '复式',
         友: '有', 尤: '龙', 虑: '虎', 坡: '波', 午: '牛', 綠: '绿', 孑: '子', 监: '蓝', 俏: '肖', 串肖: '连肖', '连/肖': '连肖',
@@ -5084,10 +5084,10 @@ function regionToKey(region) {
       for (const [k, v] of Object.entries(reps)) c = c.split(k).join(v);
       ['天天彩', '天天采', '天天', '天彩', '天采', '总单'].forEach(s => c = c.split(s).join(''));
       c = c.replace(/澳门\d+期/g, '');
-      // 金额后缀+中文标点 → 换行（避免污染下一行）
-      c = c.replace(/(\d(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤)?)[。！？；]/g, '$1\n');
-      // 剩余的中文标点 → 空格
-      c = c.replace(/[。！？；]/g, ' ');
+      // 金额后缀 + 中文标点（含半角!） → 换行
+      c = c.replace(/(\d(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤)?)[。！？；!]/g, '$1\n');
+      // 其余中文标点及半角感叹号 → 连字符 '-'
+      c = c.replace(/[。！？；!]/g, '-');
       c = c.replace(/[^\dA-Za-z\u4e00-\u9fa5\s,\-，\=＝\.]/g, ' ');
       c = c.replace(/\n/g, '[[[NL]]]');
       c = c.replace(/[\s]{2,}/g, ' ');
