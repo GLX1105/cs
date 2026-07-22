@@ -3750,6 +3750,17 @@ window._recognizedTotal = State.recognizedTotal;
                 reporters.push(options[i].value);
             }
         }
+        // 如果 filterReporter 为空，直接从订单列表提取
+        if (reporters.length === 0) {
+            const reporterSet = new Set();
+            State.orderList.forEach(o => {
+                if (o.date === State.currentFilterDate && o.reporter) {
+                    reporterSet.add(o.reporter);
+                }
+            });
+            reporters = Array.from(reporterSet).sort();
+        }
+
         if (reporterSelectWrapper) {
             const options = reporters.length > 0 ? reporters : [];
             createCustomSelect(reporterSelectWrapper, options, options[0] || '', (val) => {
@@ -3773,7 +3784,6 @@ window._recognizedTotal = State.recognizedTotal;
             return selected;
         };
 
-        // ===== 第19点：左右面板合并为一个滚动区域 =====
         const body = document.getElementById('orderGroupBody');
         if (body) {
             body.style.overflowY = 'auto';
@@ -3783,10 +3793,8 @@ window._recognizedTotal = State.recognizedTotal;
         const updateRightPanel = () => {
             const rightDiv = document.getElementById('orderGroupRight');
             if (!rightDiv) return;
-            // 第2点：右侧面板去绿色边框、白色背景
             rightDiv.style.background = '#ffffff';
             rightDiv.style.border = 'none';
-            // 第19点：移除独立滚动
             rightDiv.style.overflowY = 'visible';
             rightDiv.style.maxHeight = 'none';
             const selectedRegions = getSelectedRegions();
@@ -3812,7 +3820,6 @@ window._recognizedTotal = State.recognizedTotal;
                     const nums = data.nums || [];
                     const shengs = data.shengs || [];
                     html += `<div style="display:flex; flex-direction:column; align-items:flex-start; margin:0 0 1.2em 0; padding:0; line-height:1.2;">`;
-                    
                     html += `<div style="font-weight:bold; font-size:12px; margin:0 0 2px 0; padding:0;">${titleText}</div>`;
                     
                     let ballsHTML = '<div style="display:flex; align-items:flex-end; gap:4px; margin:0; padding:0;">';
@@ -3832,7 +3839,6 @@ window._recognizedTotal = State.recognizedTotal;
                     html += ballsHTML;
                     html += shengsHTML;
                     html += `</div>`;
-                    // 第1点：每个地区末尾添加分隔线
                     html += '<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;">';
                 });
             }
@@ -3840,7 +3846,6 @@ window._recognizedTotal = State.recognizedTotal;
             html += '<div style="height:10px;"></div>';
             const reportHtml = generateReporterProfitReport(selectedReporter, selectedRegions);
             html += reportHtml;
-
             rightDiv.innerHTML = html;
         };
 
@@ -3939,10 +3944,8 @@ window._recognizedTotal = State.recognizedTotal;
         const updateLeftPanel = () => {
             const leftDiv = document.getElementById('orderGroupLeft');
             if (!leftDiv) return;
-            // 第22点：左侧面板背景改为白色，彻底解决滚动断层
             leftDiv.style.background = '#ffffff';
             leftDiv.style.border = 'none';
-            // 第19点：移除独立滚动
             leftDiv.style.overflowY = 'visible';
             leftDiv.style.maxHeight = 'none';
             const selectedReporter = getSelectedReporter();
@@ -3992,7 +3995,6 @@ window._recognizedTotal = State.recognizedTotal;
                         typeMap[w.betType].winAmount += w.winAmount;
                     });
 
-                    // 第18点：恢复居中 + 第21点：卡片边框
                     let itemHTML = `<div style="margin:0;padding:2px 4px;border:1px solid #d5dce3;border-radius:3px;background:#fff;text-align:center;">`;
                     itemHTML += `<div style="margin:0;padding:0;text-align:center;">`;
                     itemHTML += `<span style="color:#000;font-weight:normal;">${item.seq}条：</span>`;
