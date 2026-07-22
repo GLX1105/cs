@@ -4804,31 +4804,15 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             if(pageName==='todayDraw'){ bindDrawInputs(); bindTodayDrawControls(); }
             if(pageName==='tools')bindCalcButton();
             if(pageName==='orderDetail'){
-                // 初始化订单详情页的自定义下拉框
-                const filterRegionOpts = ['不限','澳门','香港','粤港'];
-                const filterBetTypeOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.betType))].filter(Boolean);
-                const filterWinStatusOpts = ['不限','中奖','未中奖','未知'];
-                const filterReporterOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.reporter))].filter(Boolean);
-                const schemeNames = window.schemes.map((s,i)=> s.name);
-                createCustomSelect(document.getElementById('filterRegionWrapper'), filterRegionOpts, State.orderDetailFilters.region, (val) => {
-                    State.orderDetailFilters.region = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-                });
-                createCustomSelect(document.getElementById('filterBetTypeWrapper'), filterBetTypeOpts, State.orderDetailFilters.betType, (val) => {
-                    State.orderDetailFilters.betType = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-                });
-                createCustomSelect(document.getElementById('filterWinStatusWrapper'), filterWinStatusOpts, State.orderDetailFilters.winStatus, (val) => {
-                    State.orderDetailFilters.winStatus = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-                });
-                createCustomSelect(document.getElementById('filterReporterWrapper'), filterReporterOpts, State.orderDetailFilters.reporter, (val) => {
-                    State.orderDetailFilters.reporter = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-                });
-                createCustomSelect(document.getElementById('orderDetailSchemeSelectWrapper'), schemeNames, window.schemes[State.selectedSchemeIdx].name, (val) => {
-                    State.selectedSchemeIdx = window.schemes.findIndex(s => s.name === val);
-                    persistAll();
-                    switchPage('orderDetail');
-                });
-
                 bindOrderDetailEvents();
+                const sel = document.getElementById('orderDetailSchemeSelect');
+                if(sel){
+                    sel.addEventListener('change', function(){
+                        State.selectedSchemeIdx = parseInt(this.value,10);
+                        persistAll();
+                        switchPage(currentPage);
+                    });
+                }
                 document.getElementById('btnFilterDuijiang')?.addEventListener('click', performFilterDuijiang);
                 document.getElementById('btnComprehensiveDuijiang')?.addEventListener('click', performComprehensiveDuijiang);
                 document.getElementById('btnResetDraw')?.addEventListener('click', () => {
@@ -4845,8 +4829,6 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
                 renderEntryTable();
                 initEntryContextMenu();
                 bindEntryTableDblClick();
-                // 重新初始化录单窗口申报人下拉，确保选项最新
-                updateEntryReporterSelect();
             }
             if(pageName==='numberList'){
                 const yearZodiacSelect = document.getElementById('yearZodiacSelect');
@@ -4924,7 +4906,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             } else if (category === '二中二' || category === '特碰' || category === '三中三' || (category && category.includes('不中')) || (category && category.includes('连尾'))) {
                 State.reportedOrdersLianMa.push(orderObj);
             }
-            logLines.push(`${region} ${category} ${numbers} 各${formatMoney(unitAmount)} 总额${formatMoney(total)} 申报人:${getEntryReporterSelectValue()}`);
+            logLines.push(`${region} ${category} ${numbers} 各${formatMoney(unitAmount)} 总额${formatMoney(total)} 申报人:${document.getElementById('entryReporterSelect')?.value || ''}`);
         }
         if (logLines.length > 0) {
             addOperationLog('上报订单', logLines.join('\n') + '\n');
@@ -5443,8 +5425,9 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         return result;
     }
 
+    // 【唯一修改点】去掉金额后缀，若后面紧跟数字或 '-' 则插入空格
     function step_stripAmountSuffix(txt) {
-        return txt.replace(/(\d+(?:\.\d+)?)\s*(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤)/g, '$1');
+        return txt.replace(/(\d+(?:\.\d+)?)\s*(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤)(?=\d|-$)/g, '$1 ');
     }
 
     function step_handleChinesePunctuation(txt) {
@@ -6190,7 +6173,8 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
     let lastSavedPureLines = null;
 
     function saveOrder() {
-        const reporterName = getEntryReporterSelectValue();
+        const sel = document.getElementById('entryReporterSelect');
+        const reporterName = sel ? sel.value : '';
         if (!reporterName) { showAlert('请选择申报人'); return; }
         const pureLines = State.pureOrderLines || [];
         const pureRegions = State.pureOrderRegions || [];
