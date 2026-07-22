@@ -187,6 +187,12 @@
         .storage-row { display: flex; justify-content: space-between; margin: 2px 0; }
         .storage-label { color: #000; }
         .storage-value { font-weight: bold; }
+
+        /* 下拉框高度限制：当带有 size 属性时，限制高度并出现滚动条 */
+        select[size] {
+            overflow-y: auto;
+            max-height: calc(1.5em * 8 + 4px); /* 约8行高度 */
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden">
@@ -1381,6 +1387,7 @@ window._recognizedTotal = State.recognizedTotal;
                     if (colIndex === 7) {
                         const select = document.createElement('select');
                         select.style.width = '100%';
+                        select.classList.add('height-limited-select');
                         const applicants = window.applicants || [];
                         applicants.forEach(a => {
                             const opt = document.createElement('option');
@@ -1597,7 +1604,7 @@ window._recognizedTotal = State.recognizedTotal;
                         const optionsHTML = applicants.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
                         promptDiv.innerHTML = `
                             <p id="promptMessage" class="text-sm text-gray-700 mb-4">选择或输入新申报人：</p>
-                            <select id="promptSelect" class="border border-gray-300 px-2 py-1 text-sm rounded w-full mb-2">
+                            <select id="promptSelect" class="height-limited-select border border-gray-300 px-2 py-1 text-sm rounded w-full mb-2">
                                 <option value="">-- 请选择 --</option>
                                 ${optionsHTML}
                             </select>
@@ -1779,6 +1786,7 @@ window._recognizedTotal = State.recognizedTotal;
             const colLabels = ['序号','区域','投注类型','订单信息','计算方式','金额','订单总额','订单序号','申报人','中奖详情','中奖金额','备注'];
             if (colIndex === 9) {
                 const select = document.createElement('select'); select.style.width = '100%';
+                select.classList.add('height-limited-select');
                 (window.applicants || []).forEach(a => { const opt = document.createElement('option'); opt.value = a.name; opt.textContent = a.name; if (a.name === originalText) opt.selected = true; select.appendChild(opt); });
                 td.textContent = ''; td.appendChild(select); select.focus();
                 const finish = () => { td.textContent = select.value; const oldReporter = order.reporter; order.reporter = select.value; if (oldReporter !== select.value) reassignSeqForReporterDate(order.date, select.value); const amt = parseFloat(order.amount) || 0; if (amt > 0 && order.orderInfo) order.totalAmount = calcTotalByPlayType(order.betType, order.orderInfo, amt);
@@ -1951,6 +1959,64 @@ window._recognizedTotal = State.recognizedTotal;
     }
 
     function updateRowSelection() { document.querySelectorAll('#orderDetailTbody .order-row').forEach(row => { const realIdx = parseInt(row.dataset.realIndex); row.classList.toggle('selected', State.selectedOrderIndices.has(realIdx)); }); }
+
+    // ========= 窗口拖拽边界修正函数 =========
+    function constrainWindowPosition(box) {
+        if (!box) return;
+        const rect = box.getBoundingClientRect();
+        const titleBar = box.querySelector('.modal-header') || box.querySelector('.report-header');
+        const headerHeight = titleBar ? titleBar.offsetHeight : 30;
+        const minVisible = 20;
+        let newLeft = rect.left, newTop = rect.top;
+        const screenW = window.innerWidth, screenH = window.innerHeight;
+
+        // 右边界：标题栏完全跑出屏幕右侧
+        if (rect.left + headerHeight < minVisible) {
+            newLeft = minVisible - headerHeight;
+        } else if (rect.right - headerHeight > screenW - minVisible) {
+            newLeft = screenW - minVisible - rect.width + headerHeight;
+        }
+        // 上边界：标题栏完全跑出屏幕顶部
+        if (rect.top + headerHeight < minVisible) {
+            newTop = minVisible - headerHeight;
+        } else if (rect.bottom - headerHeight > screenH - minVisible) {
+            newTop = screenH - minVisible - rect.height + headerHeight;
+        }
+        // 下边界：标题栏完全跑出屏幕底部
+        if (rect.top > screenH - minVisible) {
+            newTop = screenH - minVisible;
+        }
+        // 左边界：标题栏完全跑出屏幕左侧
+        if (rect.left > screenW - minVisible) {
+            newLeft = screenW - minVisible;
+        }
+
+        if (newLeft !== rect.left || newTop !== rect.top) {
+            box.style.left = newLeft + 'px';
+            box.style.top = newTop + 'px';
+            if (!box.style.position || box.style.position === 'static') {
+                box.style.position = 'absolute';
+            }
+        }
+    }
+
+    // ========= 下拉框高度限制与向下展开控制 =========
+    document.addEventListener('focusin', function(e) {
+        if (e.target.tagName === 'SELECT' && e.target.classList.contains('height-limited-select')) {
+            e.target.setAttribute('size', Math.min(e.target.options.length, 8));
+        }
+    });
+    document.addEventListener('focusout', function(e) {
+        if (e.target.tagName === 'SELECT' && e.target.classList.contains('height-limited-select')) {
+            e.target.removeAttribute('size');
+        }
+    });
+    document.addEventListener('change', function(e) {
+        if (e.target.tagName === 'SELECT' && e.target.classList.contains('height-limited-select')) {
+            e.target.removeAttribute('size');
+            e.target.blur();
+        }
+    });
 // ========= 配置弹窗逻辑 =========
     (function initConfigModal(){
         let isConfigDirty = false;
@@ -1999,6 +2065,7 @@ window._recognizedTotal = State.recognizedTotal;
         window.schemes=[{name:'47倍计算'},{name:'47倍无水'},{name:'47倍3水'},{name:'47倍4水'},{name:'47倍4水28'},{name:'47倍2水'},{name:'47倍3水28'}].map(s=>{const rows=getFullRows();const reb=getDefaultRebate(s.name);rows.forEach(r=>r.rebate=reb);return{name:s.name,rows};});
         let currentSchemeIdx=0;let selectedOddsRow=null;
         const schemeSelect=document.getElementById('scheme-select');const oddsTbody=document.getElementById('odds-tbody');
+        // 赔率方案下拉选项数量固定（7个），不需要高度限制，不加类
         function renderSchemeSelect(){schemeSelect.innerHTML='';window.schemes.forEach((s,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent=s.name;if(i===currentSchemeIdx)opt.selected=true;schemeSelect.appendChild(opt);});}
         function renderOddsTable(){
             oddsTbody.innerHTML='';
@@ -2759,7 +2826,7 @@ window._recognizedTotal = State.recognizedTotal;
                 <button class="border border-gray-300 px-2.5 py-1 hover:bg-gray-50 rounded" id="btnFilterDuijiang">过滤兑奖</button>
                 <button class="border border-gray-300 px-2.5 py-1 hover:bg-gray-50 rounded" id="btnComprehensiveDuijiang">综合兑奖</button>
                 <button class="border border-gray-300 px-2.5 py-1 hover:bg-gray-50 rounded" id="btnResetDraw">重置开奖</button>
-                <select id="orderDetailSchemeSelect" class="border border-gray-300 px-2 py-1 bg-white rounded">
+                <select id="orderDetailSchemeSelect" class="height-limited-select border border-gray-300 px-2 py-1 bg-white rounded">
                     ${window.schemes.map((s,i)=>`<option value="${i}" ${i===State.selectedSchemeIdx?'selected':''}>${s.name}</option>`).join('')}
                 </select>
                 <div class="flex-1 flex min-w-[200px]">
@@ -2793,16 +2860,16 @@ window._recognizedTotal = State.recognizedTotal;
                 <span>状态：<span class="text-green-600 font-medium">${filteredWithRealIdx.length>0?'正常':'无订单'}</span></span>
             </div>
             <div class="grid grid-cols-4 gap-3 text-xs flex-shrink-0">
-                <select id="filterRegion" class="border border-gray-300 p-1.5 bg-white rounded">
+                <select id="filterRegion" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
                     ${regions.map(r => `<option value="${r}" ${State.orderDetailFilters.region===r?'selected':''}>${r}</option>`).join('')}
                 </select>
-                <select id="filterBetType" class="border border-gray-300 p-1.5 bg-white rounded">
+                <select id="filterBetType" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
                     ${betTypes.map(t => `<option value="${t}" ${State.orderDetailFilters.betType===t?'selected':''}>${t}</option>`).join('')}
                 </select>
-                <select id="filterWinStatus" class="border border-gray-300 p-1.5 bg-white rounded">
+                <select id="filterWinStatus" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
                     ${winStatuses.map(s => `<option value="${s}" ${State.orderDetailFilters.winStatus===s?'selected':''}>${s}</option>`).join('')}
                 </select>
-                <select id="filterReporter" class="border border-gray-300 p-1.5 bg-white rounded">
+                <select id="filterReporter" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
                     ${reporters.map(r => `<option value="${r}" ${State.orderDetailFilters.reporter===r?'selected':''}>${r}</option>`).join('')}
                 </select>
             </div>
@@ -3475,8 +3542,17 @@ window._recognizedTotal = State.recognizedTotal;
         });
 
         document.addEventListener('mouseup', () => {
-            if (dragState.isDragging) { dragState.isDragging = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
-            if (currentResizeDir) { currentResizeDir = null; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+            if (dragState.isDragging) {
+                dragState.isDragging = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                constrainWindowPosition(box);
+            }
+            if (currentResizeDir) {
+                currentResizeDir = null;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
         });
     }
 
@@ -3542,6 +3618,7 @@ window._recognizedTotal = State.recognizedTotal;
                 });
                 reporterSelect.value = reporters[0];
             }
+            reporterSelect.classList.add('height-limited-select');
         }
 
         const getSelectedReporter = () => {
@@ -4887,8 +4964,17 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             }
         });
         document.addEventListener('mouseup',()=>{
-            if(dragState.isDragging){dragState.isDragging=false;document.body.style.cursor='';document.body.style.userSelect='';}
-            if(currentResizeDir){currentResizeDir=null;document.body.style.cursor='';document.body.style.userSelect='';}
+            if(dragState.isDragging){
+                dragState.isDragging=false;
+                document.body.style.cursor='';
+                document.body.style.userSelect='';
+                constrainWindowPosition(modal);
+            }
+            if(currentResizeDir){
+                currentResizeDir=null;
+                document.body.style.cursor='';
+                document.body.style.userSelect='';
+            }
         });
     }
 
@@ -4901,6 +4987,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             const zs = window.applicants.find(a => a.name === '张三');
             sel.value = zs ? '张三' : (window.applicants[0]?.name || '');
         }
+        sel.classList.add('height-limited-select');
     }
 
     function buildQuickTags() {
@@ -5221,9 +5308,9 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         let result = txt;
         result = result.replace(/(\d) ([。！？；，])/g, '$1$2');
         const moneyKwPart = `(?:${KW_LIST.join('|')})`;
-        const reKw = new RegExp(`(${moneyKwPart}\\s*\\d+(?:\\.\\d+)?)\\s*([。！？；，])`, 'g');
+        const reKw = new RegExp(`(${moneyKwPart}\\s*\\d+(?:\\.\d+)?)\\s*([。！？；，])`, 'g');
         result = result.replace(reKw, '$1\n');
-        const reSuffix = new RegExp(`(\\d+(?:\\.\\d+)?\\s*(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤))\\s*([。！？；，])`, 'g');
+        const reSuffix = new RegExp(`(\\d+(?:\\.\d+)?\\s*(?:米|元|块|角|分|厘|眯|咪|井|#|快|斤))\\s*([。！？；，])`, 'g');
         result = result.replace(reSuffix, '$1\n');
         result = result.replace(/[。！？；，]/g, ' ');
         return result;
