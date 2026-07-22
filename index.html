@@ -188,10 +188,74 @@
         .storage-label { color: #000; }
         .storage-value { font-weight: bold; }
 
-        /* 下拉框高度限制：当带有 size 属性时，限制高度并出现滚动条 */
-        select[size] {
+        /* ========= 自定义下拉框样式 ========= */
+        .custom-select-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            height: 28px;
+            border: 1px solid #dcdfe6;
+            border-radius: 3px;
+            padding: 0 24px 0 8px;
+            font-size: 13px;
+            background: #fff;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+            line-height: 26px;
+            user-select: none;
+        }
+        .custom-select-trigger::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 4px solid transparent;
+            border-top-color: #606266;
+            pointer-events: none;
+        }
+        .custom-select-dropdown {
+            display: none;
+            position: absolute;
+            left: 0;
+            z-index: 1000000;
+            background: #fff;
+            border: 1px solid #dcdfe6;
+            border-radius: 3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            max-height: 12em; /* 约8行 */
             overflow-y: auto;
-            max-height: calc(1.5em * 8 + 4px); /* 约8行高度 */
+            width: max-content;
+            min-width: 100%;
+            font-size: 13px;
+        }
+        .custom-select-dropdown.show {
+            display: block;
+        }
+        .custom-select-option {
+            padding: 4px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.1s;
+        }
+        .custom-select-option:hover {
+            background: #f0f0f0;
+        }
+        .custom-select-option.selected {
+            background: #e6f3ff;
+            color: #10b981;
+            font-weight: 600;
+        }
+        /* 在录单工具栏中需要与其他按钮对齐 */
+        #orderEntryModal .toolbar-options .custom-select-wrapper {
+            width: auto;
+            min-width: 80px;
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -297,7 +361,7 @@
             <div class="report-header">
                 <div class="report-title" style="display:flex; align-items:center; gap:8px;">
                     <span>订单组明细</span>
-                    <select id="orderGroupReporterSelect" class="border border-gray-300 px-2 py-0.5 text-xs rounded bg-white"></select>
+                    <div class="custom-select-wrapper" id="orderGroupReporterSelectWrapper" style="min-width:100px;"></div>
                     <label class="flex items-center space-x-1.5 cursor-pointer" style="margin-left:8px;"><input type="checkbox" class="w-3.5 h-3.5 accent-green-600 orderGroupRegion" value="macau"><span>澳门开奖</span></label>
                     <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="w-3.5 h-3.5 accent-green-600 orderGroupRegion" value="hongkong"><span>香港开奖</span></label>
                     <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="w-3.5 h-3.5 accent-green-600 orderGroupRegion" value="yuegang"><span>粤港开奖</span></label>
@@ -427,7 +491,7 @@
                         <button id="btnSemantic">语义转换</button>
                         <button id="btnReplace">指定替换</button>
                         <button id="btnReplacePreset">替换预设</button>
-                        <select id="entryReporterSelect" style="height:28px; border:1px solid #dcdfe6; border-radius:3px; padding:0 8px; font-size:13px;"></select>
+                        <div class="custom-select-wrapper" id="entryReporterSelectWrapper" style="min-width:80px;"></div>
                     </div>
                 </div>
                 <div class="editor-wrapper">
@@ -1381,30 +1445,28 @@ window._recognizedTotal = State.recognizedTotal;
                 if (colIndex === 0 || colIndex === 4 || colIndex === 6) return;
                 td.addEventListener('dblclick', function(e) {
                     e.stopPropagation();
-                    if (td.querySelector('input') || td.querySelector('select')) return;
+                    if (td.querySelector('input') || td.querySelector('select') || td.querySelector('.custom-select-wrapper')) return;
                     const originalText = td.textContent.trim();
                     const rowIdx = parseInt(row.dataset.index);
                     if (colIndex === 7) {
-                        const select = document.createElement('select');
-                        select.style.width = '100%';
-                        select.classList.add('height-limited-select');
+                        // 申报人列：使用自定义下拉
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'custom-select-wrapper';
+                        wrapper.style.width = '100%';
                         const applicants = window.applicants || [];
-                        applicants.forEach(a => {
-                            const opt = document.createElement('option');
-                            opt.value = a.name; opt.textContent = a.name;
-                            if (a.name === originalText) opt.selected = true;
-                            select.appendChild(opt);
-                        });
+                        const options = applicants.map(a => a.name);
+                        const selectedValue = originalText;
                         td.textContent = '';
-                        td.appendChild(select);
-                        select.focus();
-                        const finish = () => {
-                            td.textContent = select.value;
-                            State.entryOrders[rowIdx].reporter = select.value;
+                        td.appendChild(wrapper);
+                        const { getValue, setValue } = createCustomSelect(wrapper, options, selectedValue, (newVal) => {
+                            State.entryOrders[rowIdx].reporter = newVal;
                             recalcEntryRow(rowIdx);
-                        };
-                        select.addEventListener('blur', finish);
-                        select.addEventListener('change', finish);
+                        });
+                        // 自动聚焦到下拉框
+                        setTimeout(() => {
+                            const trigger = wrapper.querySelector('.custom-select-trigger');
+                            if (trigger) trigger.click();
+                        }, 50);
                     } else {
                         const input = document.createElement('input');
                         input.type = 'text';
@@ -1601,13 +1663,10 @@ window._recognizedTotal = State.recognizedTotal;
                         const promptDiv = modal.querySelector('div[style]');
                         const originalHTML = promptDiv.innerHTML;
                         const applicants = window.applicants || [];
-                        const optionsHTML = applicants.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+                        const optionsHTML = applicants.map(a => a.name);
                         promptDiv.innerHTML = `
                             <p id="promptMessage" class="text-sm text-gray-700 mb-4">选择或输入新申报人：</p>
-                            <select id="promptSelect" class="height-limited-select border border-gray-300 px-2 py-1 text-sm rounded w-full mb-2">
-                                <option value="">-- 请选择 --</option>
-                                ${optionsHTML}
-                            </select>
+                            <div class="custom-select-wrapper" id="promptSelectWrapper" style="width:100%;margin-bottom:8px;"></div>
                             <input type="text" id="promptInput" class="border border-gray-300 px-2 py-1 text-sm rounded w-full mb-4" placeholder="或手动输入" />
                             <div class="flex justify-center gap-3">
                                 <button id="promptOk" class="px-4 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 text-xs">确定</button>
@@ -1616,7 +1675,9 @@ window._recognizedTotal = State.recognizedTotal;
                         modal.style.display = 'block';
                         modal.style.zIndex = '1000000';
                         const newReporter = await new Promise((resolve) => {
-                            const selectEl = document.getElementById('promptSelect');
+                            let selectedVal = '';
+                            const wrapper = document.getElementById('promptSelectWrapper');
+                            createCustomSelect(wrapper, optionsHTML, '', (val) => { selectedVal = val; });
                             const inputEl = document.getElementById('promptInput');
                             const okBtn = document.getElementById('promptOk');
                             const cancelBtn = document.getElementById('promptCancel');
@@ -1626,7 +1687,7 @@ window._recognizedTotal = State.recognizedTotal;
                                 promptDiv.innerHTML = originalHTML;
                             };
                             okBtn.addEventListener('click', () => {
-                                const val = selectEl.value || inputEl.value.trim();
+                                const val = selectedVal || inputEl.value.trim();
                                 cleanup();
                                 resolve(val);
                             });
@@ -1722,7 +1783,7 @@ window._recognizedTotal = State.recognizedTotal;
             if (e.button === 2) return;
             const tr = e.target.closest('tr.order-row');
             if (!tr) return;
-            if (e.target.closest('input') || e.target.closest('select') || e.target.closest('button')) return;
+            if (e.target.closest('input') || e.target.closest('select') || e.target.closest('.custom-select-wrapper')) return;
             const idx = parseInt(tr.dataset.index);
             if (e.ctrlKey || e.metaKey) { if (State.entrySelectedIndices.has(idx)) State.entrySelectedIndices.delete(idx); else State.entrySelectedIndices.add(idx); updateEntryRowSelection(); return; }
             if (e.shiftKey && startIndex !== -1) { const min = Math.min(startIndex, idx), max = Math.max(startIndex, idx); State.entrySelectedIndices.clear(); for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i); endIndex = idx; updateEntryRowSelection(); return; }
@@ -1780,20 +1841,34 @@ window._recognizedTotal = State.recognizedTotal;
             if (isNaN(realIdx)) return;
             const colIndex = Array.from(tr.querySelectorAll('td')).indexOf(td);
             if (colIndex === 0 || colIndex === 7) return;
-            if (td.querySelector('input') || td.querySelector('select')) return;
+            if (td.querySelector('input') || td.querySelector('select') || td.querySelector('.custom-select-wrapper')) return;
             const originalText = td.textContent.trim();
             const order = State.orderList[realIdx];
-            const colLabels = ['序号','区域','投注类型','订单信息','计算方式','金额','订单总额','订单序号','申报人','中奖详情','中奖金额','备注'];
             if (colIndex === 9) {
-                const select = document.createElement('select'); select.style.width = '100%';
-                select.classList.add('height-limited-select');
-                (window.applicants || []).forEach(a => { const opt = document.createElement('option'); opt.value = a.name; opt.textContent = a.name; if (a.name === originalText) opt.selected = true; select.appendChild(opt); });
-                td.textContent = ''; td.appendChild(select); select.focus();
-                const finish = () => { td.textContent = select.value; const oldReporter = order.reporter; order.reporter = select.value; if (oldReporter !== select.value) reassignSeqForReporterDate(order.date, select.value); const amt = parseFloat(order.amount) || 0; if (amt > 0 && order.orderInfo) order.totalAmount = calcTotalByPlayType(order.betType, order.orderInfo, amt);
+                // 申报人列：使用自定义下拉
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-select-wrapper';
+                wrapper.style.width = '100%';
+                const applicants = window.applicants || [];
+                const options = applicants.map(a => a.name);
+                const selectedValue = originalText;
+                td.textContent = '';
+                td.appendChild(wrapper);
+                createCustomSelect(wrapper, options, selectedValue, (newVal) => {
+                    const oldReporter = order.reporter;
+                    order.reporter = newVal;
+                    if (oldReporter !== newVal) reassignSeqForReporterDate(order.date, newVal);
+                    const amt = parseFloat(order.amount) || 0;
+                    if (amt > 0 && order.orderInfo) order.totalAmount = calcTotalByPlayType(order.betType, order.orderInfo, amt);
                     const logDetail = `${order.region||''} ${(order.betType||'').trim()} ${order.orderInfo||''} 各${formatMoney(order.amount)} 总额${formatMoney(order.totalAmount)} 申报人:${order.reporter||''}`;
                     addOperationLog('修改订单', logDetail + '（修改申报人）');
-                    persistAll(); switchPage('orderDetail'); };
-                select.addEventListener('blur', finish); select.addEventListener('change', finish);
+                    persistAll();
+                    switchPage('orderDetail');
+                });
+                setTimeout(() => {
+                    const trigger = wrapper.querySelector('.custom-select-trigger');
+                    if (trigger) trigger.click();
+                }, 50);
                 return;
             }
             const input = document.createElement('input'); input.type = 'text'; input.style.width = '100%'; input.style.border = '1px solid #4a90e2'; input.value = originalText;
@@ -1810,8 +1885,6 @@ window._recognizedTotal = State.recognizedTotal;
             input.addEventListener('blur', finish);
             input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); finish(); } if (e.key === 'Escape') { input.value = originalText; finish(); } });
         });
-
-        ['filterRegion','filterBetType','filterWinStatus','filterReporter'].forEach(id => { const sel = document.getElementById(id); if (sel) sel.addEventListener('change', function() { const value = this.value; if (id === 'filterRegion') State.orderDetailFilters.region = value; else if (id === 'filterBetType') State.orderDetailFilters.betType = value; else if (id === 'filterWinStatus') State.orderDetailFilters.winStatus = value; else if (id === 'filterReporter') State.orderDetailFilters.reporter = value; State.selectedOrderIndices.clear(); switchPage('orderDetail'); }); });
     }
 
     function initOrderDetailDragSelect(tbody) {
@@ -1872,7 +1945,7 @@ window._recognizedTotal = State.recognizedTotal;
         tbody.addEventListener('mousedown', (e) => {
             if (e.button === 2) return;
             const tr = e.target.closest('tr.order-row');
-            if (!tr || e.target.closest('input, select, button')) return;
+            if (!tr || e.target.closest('input, select, button, .custom-select-wrapper')) return;
 
             const realIdx = parseInt(tr.dataset.realIndex);
             if (e.ctrlKey || e.metaKey) return;
@@ -2000,23 +2073,103 @@ window._recognizedTotal = State.recognizedTotal;
         }
     }
 
-    // ========= 下拉框高度限制与向下展开控制 =========
-    document.addEventListener('focusin', function(e) {
-        if (e.target.tagName === 'SELECT' && e.target.classList.contains('height-limited-select')) {
-            e.target.setAttribute('size', Math.min(e.target.options.length, 8));
+    // ========= 自定义下拉框组件 =========
+    function createCustomSelect(container, options, selectedValue, onChange) {
+        if (!container) return { getValue: () => '', setValue: () => {} };
+        container.innerHTML = '';
+        container.style.position = 'relative';
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        trigger.textContent = selectedValue || (options.length > 0 ? options[0] : '');
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'custom-select-dropdown';
+
+        let currentValue = selectedValue || (options.length > 0 ? options[0] : '');
+
+        options.forEach(opt => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'custom-select-option';
+            if (opt === currentValue) optionDiv.classList.add('selected');
+            optionDiv.textContent = opt;
+            optionDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentValue = opt;
+                trigger.textContent = opt;
+                dropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+                optionDiv.classList.add('selected');
+                dropdown.classList.remove('show');
+                if (onChange) onChange(opt);
+            });
+            dropdown.appendChild(optionDiv);
+        });
+
+        container.appendChild(trigger);
+        container.appendChild(dropdown);
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 关闭所有其他下拉框
+            document.querySelectorAll('.custom-select-dropdown.show').forEach(d => {
+                if (d !== dropdown) d.classList.remove('show');
+            });
+            const isOpen = dropdown.classList.contains('show');
+            if (isOpen) {
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.classList.add('show');
+                // 确保向下展开：检测空间，如果下方空间不够则向上
+                const rect = trigger.getBoundingClientRect();
+                const dropdownHeight = Math.min(options.length * 28, 12 * 16 + 8); // 估算高度：最多8行
+                const spaceBelow = window.innerHeight - rect.bottom;
+                if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+                    dropdown.style.bottom = '100%';
+                    dropdown.style.top = 'auto';
+                } else {
+                    dropdown.style.top = '100%';
+                    dropdown.style.bottom = 'auto';
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        }, true);
+
+        return {
+            getValue: () => currentValue,
+            setValue: (val) => {
+                currentValue = val;
+                trigger.textContent = val;
+                dropdown.querySelectorAll('.custom-select-option').forEach(o => {
+                    o.classList.toggle('selected', o.textContent === val);
+                });
+            }
+        };
+    }
+
+    // 获取录单窗口申报人值
+    function getEntryReporterSelectValue() {
+        const trigger = document.querySelector('#entryReporterSelectWrapper .custom-select-trigger');
+        return trigger ? trigger.textContent : '';
+    }
+
+    // 设置录单窗口申报人值
+    function setEntryReporterSelectValue(val) {
+        const trigger = document.querySelector('#entryReporterSelectWrapper .custom-select-trigger');
+        if (trigger) {
+            trigger.textContent = val;
+            const dropdown = document.querySelector('#entryReporterSelectWrapper .custom-select-dropdown');
+            if (dropdown) {
+                dropdown.querySelectorAll('.custom-select-option').forEach(o => {
+                    o.classList.toggle('selected', o.textContent === val);
+                });
+            }
         }
-    });
-    document.addEventListener('focusout', function(e) {
-        if (e.target.tagName === 'SELECT' && e.target.classList.contains('height-limited-select')) {
-            e.target.removeAttribute('size');
-        }
-    });
-    document.addEventListener('change', function(e) {
-        if (e.target.tagName === 'SELECT' && e.target.classList.contains('height-limited-select')) {
-            e.target.removeAttribute('size');
-            e.target.blur();
-        }
-    });
+    }
 // ========= 配置弹窗逻辑 =========
     (function initConfigModal(){
         let isConfigDirty = false;
@@ -2065,7 +2218,6 @@ window._recognizedTotal = State.recognizedTotal;
         window.schemes=[{name:'47倍计算'},{name:'47倍无水'},{name:'47倍3水'},{name:'47倍4水'},{name:'47倍4水28'},{name:'47倍2水'},{name:'47倍3水28'}].map(s=>{const rows=getFullRows();const reb=getDefaultRebate(s.name);rows.forEach(r=>r.rebate=reb);return{name:s.name,rows};});
         let currentSchemeIdx=0;let selectedOddsRow=null;
         const schemeSelect=document.getElementById('scheme-select');const oddsTbody=document.getElementById('odds-tbody');
-        // 赔率方案下拉选项数量固定（7个），不需要高度限制，不加类
         function renderSchemeSelect(){schemeSelect.innerHTML='';window.schemes.forEach((s,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent=s.name;if(i===currentSchemeIdx)opt.selected=true;schemeSelect.appendChild(opt);});}
         function renderOddsTable(){
             oddsTbody.innerHTML='';
@@ -2826,9 +2978,7 @@ window._recognizedTotal = State.recognizedTotal;
                 <button class="border border-gray-300 px-2.5 py-1 hover:bg-gray-50 rounded" id="btnFilterDuijiang">过滤兑奖</button>
                 <button class="border border-gray-300 px-2.5 py-1 hover:bg-gray-50 rounded" id="btnComprehensiveDuijiang">综合兑奖</button>
                 <button class="border border-gray-300 px-2.5 py-1 hover:bg-gray-50 rounded" id="btnResetDraw">重置开奖</button>
-                <select id="orderDetailSchemeSelect" class="height-limited-select border border-gray-300 px-2 py-1 bg-white rounded">
-                    ${window.schemes.map((s,i)=>`<option value="${i}" ${i===State.selectedSchemeIdx?'selected':''}>${s.name}</option>`).join('')}
-                </select>
+                <div class="custom-select-wrapper" id="orderDetailSchemeSelectWrapper" style="width:110px;"></div>
                 <div class="flex-1 flex min-w-[200px]">
                     <input type="text" id="orderSearchInput" placeholder="搜索订单关键字" class="flex-1 border border-gray-300 px-2 py-1 bg-cyan-50 rounded-l">
                     <button id="orderSearchBtn" class="border border-gray-300 px-3 py-1 hover:bg-gray-50 bg-white rounded-r">搜索</button>
@@ -2860,18 +3010,10 @@ window._recognizedTotal = State.recognizedTotal;
                 <span>状态：<span class="text-green-600 font-medium">${filteredWithRealIdx.length>0?'正常':'无订单'}</span></span>
             </div>
             <div class="grid grid-cols-4 gap-3 text-xs flex-shrink-0">
-                <select id="filterRegion" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
-                    ${regions.map(r => `<option value="${r}" ${State.orderDetailFilters.region===r?'selected':''}>${r}</option>`).join('')}
-                </select>
-                <select id="filterBetType" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
-                    ${betTypes.map(t => `<option value="${t}" ${State.orderDetailFilters.betType===t?'selected':''}>${t}</option>`).join('')}
-                </select>
-                <select id="filterWinStatus" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
-                    ${winStatuses.map(s => `<option value="${s}" ${State.orderDetailFilters.winStatus===s?'selected':''}>${s}</option>`).join('')}
-                </select>
-                <select id="filterReporter" class="height-limited-select border border-gray-300 p-1.5 bg-white rounded">
-                    ${reporters.map(r => `<option value="${r}" ${State.orderDetailFilters.reporter===r?'selected':''}>${r}</option>`).join('')}
-                </select>
+                <div class="custom-select-wrapper" id="filterRegionWrapper"></div>
+                <div class="custom-select-wrapper" id="filterBetTypeWrapper"></div>
+                <div class="custom-select-wrapper" id="filterWinStatusWrapper"></div>
+                <div class="custom-select-wrapper" id="filterReporterWrapper"></div>
             </div>
             <div class="bg-white border border-gray-300 p-3 flex-shrink-0 rounded shadow-sm">
                 <div class="flex justify-around items-center">${drawHTML}</div>
@@ -3496,7 +3638,7 @@ window._recognizedTotal = State.recognizedTotal;
 
         header?.addEventListener('mousedown', (e) => {
             if (isMaximized) return;
-            if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) return;
+            if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input') || e.target.closest('.custom-select-wrapper')) return;
             dragState.isDragging = true;
             const rect = getBoxRect();
             dragState.startMouseX = e.clientX;
@@ -3599,7 +3741,7 @@ window._recognizedTotal = State.recognizedTotal;
         const modal = document.getElementById('orderGroupModal');
         if (!modal) return;
 
-        const reporterSelect = document.getElementById('orderGroupReporterSelect');
+        const reporterSelectWrapper = document.getElementById('orderGroupReporterSelectWrapper');
         const filterReporter = document.getElementById('filterReporter');
         let reporters = [];
         if (filterReporter) {
@@ -3608,23 +3750,18 @@ window._recognizedTotal = State.recognizedTotal;
                 reporters.push(options[i].value);
             }
         }
-        if (reporterSelect) {
-            reporterSelect.innerHTML = '';
-            if (reporters.length === 0) {
-                const opt = document.createElement('option'); opt.value = ''; opt.textContent = '无申报人'; reporterSelect.appendChild(opt);
-            } else {
-                reporters.forEach(r => {
-                    const opt = document.createElement('option'); opt.value = r; opt.textContent = r; reporterSelect.appendChild(opt);
-                });
-                reporterSelect.value = reporters[0];
-            }
-            reporterSelect.classList.add('height-limited-select');
+        if (reporterSelectWrapper) {
+            const options = reporters.length > 0 ? reporters : [];
+            createCustomSelect(reporterSelectWrapper, options, options[0] || '', (val) => {
+                updateLeftPanel();
+                updateRightPanel();
+            });
         }
 
         const getSelectedReporter = () => {
-            const sel = document.getElementById('orderGroupReporterSelect');
-            if (!sel) return reporters.length > 0 ? reporters[0] : '';
-            return sel.value || (reporters.length > 0 ? reporters[0] : '');
+            const trigger = document.querySelector('#orderGroupReporterSelectWrapper .custom-select-trigger');
+            if (!trigger) return reporters.length > 0 ? reporters[0] : '';
+            return trigger.textContent || (reporters.length > 0 ? reporters[0] : '');
         };
 
         const regionCheckboxes = document.querySelectorAll('.orderGroupRegion');
@@ -3881,15 +4018,6 @@ window._recognizedTotal = State.recognizedTotal;
                 updateRightPanel();
             });
         });
-
-        if (reporterSelect) {
-            const newSelect = reporterSelect.cloneNode(true);
-            reporterSelect.parentNode.replaceChild(newSelect, reporterSelect);
-            newSelect.addEventListener('change', function() {
-                updateLeftPanel();
-                updateRightPanel();
-            });
-        }
 
         updateLeftPanel();
         updateRightPanel();
@@ -4676,15 +4804,31 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             if(pageName==='todayDraw'){ bindDrawInputs(); bindTodayDrawControls(); }
             if(pageName==='tools')bindCalcButton();
             if(pageName==='orderDetail'){
+                // 初始化订单详情页的自定义下拉框
+                const filterRegionOpts = ['不限','澳门','香港','粤港'];
+                const filterBetTypeOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.betType))].filter(Boolean);
+                const filterWinStatusOpts = ['不限','中奖','未中奖','未知'];
+                const filterReporterOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.reporter))].filter(Boolean);
+                const schemeNames = window.schemes.map((s,i)=> s.name);
+                createCustomSelect(document.getElementById('filterRegionWrapper'), filterRegionOpts, State.orderDetailFilters.region, (val) => {
+                    State.orderDetailFilters.region = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+                });
+                createCustomSelect(document.getElementById('filterBetTypeWrapper'), filterBetTypeOpts, State.orderDetailFilters.betType, (val) => {
+                    State.orderDetailFilters.betType = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+                });
+                createCustomSelect(document.getElementById('filterWinStatusWrapper'), filterWinStatusOpts, State.orderDetailFilters.winStatus, (val) => {
+                    State.orderDetailFilters.winStatus = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+                });
+                createCustomSelect(document.getElementById('filterReporterWrapper'), filterReporterOpts, State.orderDetailFilters.reporter, (val) => {
+                    State.orderDetailFilters.reporter = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+                });
+                createCustomSelect(document.getElementById('orderDetailSchemeSelectWrapper'), schemeNames, window.schemes[State.selectedSchemeIdx].name, (val) => {
+                    State.selectedSchemeIdx = window.schemes.findIndex(s => s.name === val);
+                    persistAll();
+                    switchPage('orderDetail');
+                });
+
                 bindOrderDetailEvents();
-                const sel = document.getElementById('orderDetailSchemeSelect');
-                if(sel){
-                    sel.addEventListener('change', function(){
-                        State.selectedSchemeIdx = parseInt(this.value,10);
-                        persistAll();
-                        switchPage(currentPage);
-                    });
-                }
                 document.getElementById('btnFilterDuijiang')?.addEventListener('click', performFilterDuijiang);
                 document.getElementById('btnComprehensiveDuijiang')?.addEventListener('click', performComprehensiveDuijiang);
                 document.getElementById('btnResetDraw')?.addEventListener('click', () => {
@@ -4701,6 +4845,8 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
                 renderEntryTable();
                 initEntryContextMenu();
                 bindEntryTableDblClick();
+                // 重新初始化录单窗口申报人下拉，确保选项最新
+                updateEntryReporterSelect();
             }
             if(pageName==='numberList'){
                 const yearZodiacSelect = document.getElementById('yearZodiacSelect');
@@ -4778,7 +4924,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             } else if (category === '二中二' || category === '特碰' || category === '三中三' || (category && category.includes('不中')) || (category && category.includes('连尾'))) {
                 State.reportedOrdersLianMa.push(orderObj);
             }
-            logLines.push(`${region} ${category} ${numbers} 各${formatMoney(unitAmount)} 总额${formatMoney(total)} 申报人:${document.getElementById('entryReporterSelect')?.value || ''}`);
+            logLines.push(`${region} ${category} ${numbers} 各${formatMoney(unitAmount)} 总额${formatMoney(total)} 申报人:${getEntryReporterSelectValue()}`);
         }
         if (logLines.length > 0) {
             addOperationLog('上报订单', logLines.join('\n') + '\n');
@@ -4923,6 +5069,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         header?.addEventListener('mousedown',(e)=>{
             if(isMaximized)return;
             if(e.target.tagName==='BUTTON')return;
+            if(e.target.closest('.custom-select-wrapper')) return;
             dragState.isDragging=true;
             const rect=getModalRect();
             dragState.startMouseX=e.clientX;
@@ -4979,15 +5126,13 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
     }
 
     function updateEntryReporterSelect() {
-        const sel = document.getElementById('entryReporterSelect');
-        if (!sel) return;
-        sel.innerHTML = '';
-        if (window.applicants && window.applicants.length) {
-            window.applicants.forEach(a => { const opt = document.createElement('option'); opt.value = a.name; opt.textContent = a.name; sel.appendChild(opt); });
-            const zs = window.applicants.find(a => a.name === '张三');
-            sel.value = zs ? '张三' : (window.applicants[0]?.name || '');
-        }
-        sel.classList.add('height-limited-select');
+        const wrapper = document.getElementById('entryReporterSelectWrapper');
+        if (!wrapper) return;
+        const applicants = window.applicants || [];
+        const names = applicants.map(a => a.name);
+        const zs = applicants.find(a => a.name === '张三');
+        const defaultVal = zs ? '张三' : (names[0] || '');
+        createCustomSelect(wrapper, names, defaultVal, null);
     }
 
     function buildQuickTags() {
@@ -5090,6 +5235,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
             const today = document.getElementById('globalDatePicker').value;
             State.orderList.forEach(o => o.date = today);
         }
+
         switchPage('overview');
         document.querySelectorAll('.menu-item, .sub-menu-item').forEach(item=>{
             item.addEventListener('click', function(){
@@ -5099,6 +5245,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
                     renderEntryTable();
                     initEntryContextMenu();
                     loadOrderDraft();
+                    updateEntryReporterSelect();
                     return;
                 }
                 if(this.getAttribute('data-page')==='specialCode'&&this.classList.contains('menu-item')){
@@ -5113,23 +5260,19 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         });
         document.getElementById('specialCodeSubmenu').style.display='block';
 
-        // ===== 第15点：快捷键 =====
+        // ===== 快捷键 =====
         document.addEventListener('keydown', function(e) {
-            // Alt+1：开关录单窗口
             if (e.altKey && e.key === '1') {
                 e.preventDefault();
                 const modal = document.getElementById('orderEntryModal');
                 if (modal.style.display === 'block') {
-                    // 关闭 → 触发关闭按钮逻辑（保留未发送订单提示）
                     document.querySelector('#orderEntryModal .close-btn').click();
                 } else {
-                    // 打开 → 显示窗口 + 聚焦输入框
                     modal.style.display = 'block';
                     const ta = document.getElementById('sourceOrderInput');
                     if (ta) ta.focus();
                 }
             }
-            // Alt+3：保存下单（仅窗口打开时）
             if (e.altKey && e.key === '3') {
                 e.preventDefault();
                 const modal = document.getElementById('orderEntryModal');
@@ -6044,12 +6187,10 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         });
     }
 
-    // 第14点：记录上次保存的内容
     let lastSavedPureLines = null;
 
     function saveOrder() {
-        const sel = document.getElementById('entryReporterSelect');
-        const reporterName = sel ? sel.value : '';
+        const reporterName = getEntryReporterSelectValue();
         if (!reporterName) { showAlert('请选择申报人'); return; }
         const pureLines = State.pureOrderLines || [];
         const pureRegions = State.pureOrderRegions || [];
@@ -6205,7 +6346,6 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         State.cachedMaxLossData = [];
         updateOrderTotalDisplay();
         clearOrderDraft();
-        // 第13点已回滚：不再重置 entryBatchSeq
     }
 
     function bindOrderEntryRecognition() {
