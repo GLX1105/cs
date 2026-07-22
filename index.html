@@ -3725,8 +3725,8 @@ window._recognizedTotal = State.recognizedTotal;
         const updateLeftPanel = () => {
             const leftDiv = document.getElementById('orderGroupLeft');
             if (!leftDiv) return;
-            // 第2点：左侧面板背景浅灰、无边框
-            leftDiv.style.background = '#f5f5f5';
+            // 第22点：左侧面板背景改为白色，彻底解决滚动断层
+            leftDiv.style.background = '#ffffff';
             leftDiv.style.border = 'none';
             // 第19点：移除独立滚动
             leftDiv.style.overflowY = 'visible';
@@ -3778,7 +3778,7 @@ window._recognizedTotal = State.recognizedTotal;
                         typeMap[w.betType].winAmount += w.winAmount;
                     });
 
-                    // ===== 第18点：恢复居中 + 第21点：卡片边框 =====
+                    // 第18点：恢复居中 + 第21点：卡片边框
                     let itemHTML = `<div style="margin:0;padding:2px 4px;border:1px solid #d5dce3;border-radius:3px;background:#fff;text-align:center;">`;
                     itemHTML += `<div style="margin:0;padding:0;text-align:center;">`;
                     itemHTML += `<span style="color:#000;font-weight:normal;">${item.seq}条：</span>`;
@@ -3793,8 +3793,7 @@ window._recognizedTotal = State.recognizedTotal;
                     return itemHTML;
                 }).join('');
 
-                // 第20点：修复背景断层，列容器也使用浅灰色背景
-                return `<div class="order-column" style="border-right:none;padding-right:0;margin-right:8px;padding-top:2px;background:#f5f5f5;">${colItemsHTML}</div>`;
+                return `<div class="order-column" style="border-right:none;padding-right:0;margin-right:8px;padding-top:2px;">${colItemsHTML}</div>`;
             }).join('');
 
             leftDiv.innerHTML = columnsHTML;
@@ -3850,7 +3849,7 @@ window._recognizedTotal = State.recognizedTotal;
                     border: 'none',
                     padding: '10px 15px',
                     boxSizing: 'border-box',
-                    background: '#f5f5f5',
+                    background: '#ffffff',
                     flexShrink: '0',
                     width: 'max-content'
                 });
