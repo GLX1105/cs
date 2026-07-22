@@ -3778,8 +3778,8 @@ window._recognizedTotal = State.recognizedTotal;
                         typeMap[w.betType].winAmount += w.winAmount;
                     });
 
-                    // ===== 第18点：恢复居中，不使用固定宽度对齐 =====
-                    let itemHTML = `<div style="margin:0;padding:2px 4px;border:none;border-radius:3px;background:#fff;text-align:center;">`;
+                    // ===== 第18点：恢复居中 + 第21点：卡片边框 =====
+                    let itemHTML = `<div style="margin:0;padding:2px 4px;border:1px solid #d5dce3;border-radius:3px;background:#fff;text-align:center;">`;
                     itemHTML += `<div style="margin:0;padding:0;text-align:center;">`;
                     itemHTML += `<span style="color:#000;font-weight:normal;">${item.seq}条：</span>`;
                     itemHTML += `<span style="color:#2563eb;font-weight:bold;font-size:15px;">${item.amount}</span>`;
@@ -3793,8 +3793,8 @@ window._recognizedTotal = State.recognizedTotal;
                     return itemHTML;
                 }).join('');
 
-                // 第18点补充：订单组列不设白色背景，间隙保持浅灰
-                return `<div class="order-column" style="border-right:none;padding-right:0;margin-right:8px;padding-top:2px;">${colItemsHTML}</div>`;
+                // 第20点：修复背景断层，列容器也使用浅灰色背景
+                return `<div class="order-column" style="border-right:none;padding-right:0;margin-right:8px;padding-top:2px;background:#f5f5f5;">${colItemsHTML}</div>`;
             }).join('');
 
             leftDiv.innerHTML = columnsHTML;
@@ -6119,7 +6119,7 @@ const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,s
         State.cachedMaxLossData = [];
         updateOrderTotalDisplay();
         clearOrderDraft();
-        State.entryBatchSeq = 0;
+        // 第13点已回滚：不再重置 entryBatchSeq
     }
 
     function bindOrderEntryRecognition() {
