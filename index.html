@@ -4428,7 +4428,7 @@ window._recognizedTotal = State.recognizedTotal;
         const report=document.getElementById('analysisReport');
         if(report)report.innerHTML=State.orderList.length===0?'暂无订单数据。':`澳门特码胜负差过大，建议降低亏损大的数字的押注数额。`;
     }
-      function updateSpecialCodeStats(){
+         function updateSpecialCodeStats(){
         const container=document.getElementById('specialCodeStats');
         if(!container)return;
         const betData=getNumberBetData();
@@ -6137,7 +6137,7 @@ window._recognizedTotal = State.recognizedTotal;
     }
 
     // ===== 识别入口 =====
-    // 第12项：昵称模式 - 预处理后直接扫描 xxx: 格式行作为分组依据，不插入分隔标记
+    // 第12项：昵称模式 - 预处理后直接扫描 xxx: 格式行作为分组依据，每组间插入 isSeparator 标记
     function performRecognition(text) {
       const resultDiv = document.getElementById('orderResult');
       if (!text || !text.trim()) { 
@@ -6228,7 +6228,7 @@ window._recognizedTotal = State.recognizedTotal;
           return;
         }
 
-        // 每组独立解析订单，不插入任何分隔标记
+        // 每组独立解析订单，每组前插入 isSeparator 标记
         const mergedArray = [];
         let lastInheritablePlay = null;
 
@@ -6261,6 +6261,8 @@ window._recognizedTotal = State.recognizedTotal;
           }
 
           if (groupLineResults.length > 0) {
+            // 插入分组标记
+            mergedArray.push({ isSeparator: true });
             groupLineResults.forEach(r => {
               mergedArray.push({
                 category: r.cat, numbers: r.nums, unitAmount: r.amt, totalCount: r.cnt,
@@ -6313,40 +6315,23 @@ window._recognizedTotal = State.recognizedTotal;
     }
 
     // ===== 结果展示 =====
-    // 第12.11项：新增 entryMode 参数，昵称模式下在 pureLines 中插入分组标记
+    // 第12.11项：新增 entryMode 参数，昵称模式下识别 isSeparator 标记并插入分组分隔符
     function displayResults(rs, container, entryMode) {
       if (!container) container = document.getElementById('orderResult');
       if (!container) return;
       if (rs.length === 0) { container.innerHTML = ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; return; }
       let total = 0; let html = ''; const pureLines = []; const pureRegions = []; const maxLossData = [];
       const regionColorMap = { 'macau': '#e74c3c', 'hongkong': '#3498db', 'yuegang': '#27ae60' };
-      // 第12.11项：昵称模式分组状态
-      let isNicknameMode = entryMode === 'nickname';
-      let nicknameGroupIndex = 0;
-      let prevRegion = null;
+      const isNicknameMode = entryMode === 'nickname';
 
       for (let i = 0; i < rs.length; i++) {
         const r = rs[i];
 
-        // 第12.11项：昵称模式检测分组边界（通过 region 变化或 isSeparator 标记）
-        if (isNicknameMode) {
-          if (r.isSeparator) {
-            // 在 pureLines 中插入特殊标记，用于 saveOrder 识别分组边界
-            pureLines.push('###GROUP_SEPARATOR###');
-            pureRegions.push('');
-            nicknameGroupIndex++;
-            prevRegion = null;
-            continue;
-          }
-          // 如果 region 发生变化且不是第一个，也视为分组边界
-          if (prevRegion !== null && r.region !== prevRegion && r.category !== '__unrecognized__') {
-            pureLines.push('###GROUP_SEPARATOR###');
-            pureRegions.push('');
-            nicknameGroupIndex++;
-          }
-          if (r.category !== '__unrecognized__') {
-            prevRegion = r.region;
-          }
+        // 昵称模式：识别 isSeparator 标记，向 pureLines 插入分组分隔符
+        if (isNicknameMode && r.isSeparator) {
+          pureLines.push('###GROUP_SEPARATOR###');
+          pureRegions.push('');
+          continue;
         }
 
         if (r.category === '__unrecognized__') {
@@ -6471,7 +6456,7 @@ window._recognizedTotal = State.recognizedTotal;
     let lastSavedPureLines = null;
 
     // 第12项：修改 saveOrder 支持昵称模式分组保存
-    // 第12.11项：昵称模式改用 pureLines 构建订单，按 ###GROUP_SEPARATOR### 切分组
+    // 第12.11项：昵称模式使用 pureLines 构建订单，按 ###GROUP_SEPARATOR### 切分组
     function saveOrder() {
         const reporterName = getEntryReporterSelectValue();
         if (!reporterName) { showAlert('请选择申报人'); return; }
@@ -6744,4 +6729,4 @@ window._recognizedTotal = State.recognizedTotal;
     });
 </script>
 </body>
-</html>                  
+</html>
