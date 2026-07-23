@@ -58,7 +58,7 @@
         #reportModal .report-header .report-controls button, #orderGroupModal .report-header .report-controls button { width:26px; height:22px; background:none; border:none; font-size:14px; color:#555; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
         #reportModal .report-header .report-controls button:hover, #orderGroupModal .report-header .report-controls button:hover { background:rgba(0,0,0,0.05); color:#333; }
         #reportModal .report-header .report-controls .close-btn:hover, #orderGroupModal .report-header .report-controls .close-btn:hover { background:#e81123; color:white; }
-        /* === 修改第3项：报告/订单组明细正文字体 === */
+        /* 第3项：报告/订单组明细正文 字体改为 Courier New */
         #reportModal .report-body, #orderGroupModal .report-body { flex:1; overflow-y:auto; padding:20px; font-family:'Courier New','Microsoft YaHei',monospace; font-size:13px; line-height:1.8; white-space:pre-wrap; word-break:break-all; color:#333; user-select:text; -webkit-user-select:text; }
         #reportModal .report-body .report-negative, #orderGroupModal .report-body .report-negative { color:#dc2626; }
         #reportModal .report-footer, #orderGroupModal .report-footer { display:flex; justify-content:flex-end; gap:10px; padding:10px 16px; border-top:1px solid #e5e7eb; }
@@ -127,7 +127,7 @@
         #configModal tbody tr:hover { background-color:#e8f4ff; } #configModal tbody tr:nth-child(even) { background-color:#f9f9f9; }
         #configModal tbody tr.selected { background-color:#b8daff!important; outline:1px solid #4a90e2; outline-offset:-1px; }
 
-        /* === 修改第7项：申报人表格 overflow 修正 === */
+        /* 第7项：申报人表格 overflow 修正 */
         #configModal .applicant-body { display:flex; gap:10px; flex:1; overflow:visible; min-height:0; }
         #configModal .applicant-list { flex:1; overflow-y:auto; border:1px solid #d0d0d0; max-height:100%; }
         #configModal .applicant-note { width:200px; flex-shrink:0; font-size:12px; color:#666; line-height:1.6; padding:4px; }
@@ -147,9 +147,9 @@
         #orderEntryModal .editor-half { flex:1; display:flex; flex-direction:column; }
         #orderEntryModal .editor-half:first-child { border-right:1px solid #e4e7ed; }
         #orderEntryModal .editor-label { padding:8px 12px; background:#f5f7fa; font-size:13px; color:#909399; border-bottom:1px solid #ebeef5; flex-shrink:0; display:flex; align-items:center; gap:10px; }
-        /* === 修改第1项：录单输入框字体 === */
+        /* 第1项：录单输入框字体 Courier New */
         #orderEntryModal .editor-half textarea { flex:1; border:none; padding:12px; font-family:'Courier New',monospace; font-size:14px; outline:none; resize:none; color:#303133; }
-        /* === 修改第2项和第5项：识别结果框字体及可选中 === */
+        /* 第2项+第5项：识别结果框字体 Courier New + 可选中 */
         #orderEntryModal .result-div { flex:1; padding:12px; font-family:'Courier New',monospace; font-size:14px; overflow-y:auto; color:#303133; white-space:pre-wrap; word-break:break-all; line-height:1.6; user-select:text; -webkit-user-select:text; }
         #orderEntryModal button { font-size:12px; padding:5px 12px; border:1px solid #dcdfe6; background:#fff; border-radius:3px; cursor:pointer; }
         #orderEntryModal button:hover { color:#409eff; border-color:#c6e2ff; background:#ecf5ff; }
@@ -193,21 +193,18 @@
         .storage-label { color: #000; }
         .storage-value { font-weight: bold; }
 
-        /* 仅当 select 因选项过多需要限高时才生效，保持接近原生下拉外观 */
         select[data-limited="true"] {
             overflow-y: auto;
-            max-height: 12em; /* 约8行 */
+            max-height: 12em;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* 修正：带 size 属性时，让高度自适应，确保能展开 */
         select[size] {
             height: auto !important;
         }
 
-        /* 自定义下拉框样式 */
         .custom-select-wrapper {
             position: relative;
             display: inline-block;
@@ -247,7 +244,7 @@
             border: 1px solid #dcdfe6;
             border-radius: 3px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            max-height: 12em; /* 约8行 */
+            max-height: 12em;
             overflow-y: auto;
             width: max-content;
             min-width: 100%;
@@ -270,16 +267,25 @@
             color: #10b981;
             font-weight: 600;
         }
-        /* 在录单工具栏中需要与其他按钮对齐 */
         #orderEntryModal .toolbar-options .custom-select-wrapper {
             width: auto;
             min-width: 80px;
             vertical-align: middle;
         }
-        /* === 新增第6项：兑奖结果框可选中 === */
+        /* 第6项：兑奖结果框可选中 */
         .duijiang-result-box {
             user-select: text;
             -webkit-user-select: text;
+        }
+        /* 第12项：昵称模式虚线分隔 */
+        .group-separator {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 4px 0;
+            letter-spacing: 2px;
         }
     </style>
 </head>
@@ -456,7 +462,7 @@
             <div class="content" id="applicant-content">
                 <div class="toolbar"><button id="btn-add-applicant">添加申报人</button><button id="btn-delete-applicant">删除申报人</button><input type="text" id="new-applicant-name" placeholder="此处输入要添加的申报人"></div>
                 <div class="applicant-body"><div class="applicant-list"><table><thead><tr><th>申报人</th><th>赔率配置</th></tr></thead><tbody id="applicant-tbody"></tbody></table></div><div class="applicant-note"><strong>说明：</strong><br><br><span class="red">请至少设置一个申报人。</span><br><br>此处设置的申报人仅作用在录单界面。申报人是用于区别订单归属人。<br>赔率配置选项自动关联"赔率/返水"页的方案列表。<br><br>💡 双击名称可编辑；单击行空白区域可选中，选中后点击删除按钮或按Delete键删除。</div></div>
-                <!-- 第8项：删除确认按钮，不再渲染 HTML 中的按钮 -->
+                <!-- 第8项：确认按钮已删除 -->
             </div>
         </div>
     </div>
@@ -500,7 +506,8 @@
                         <label><input type="radio" name="regionMode"> 澳门</label>
                         <label><input type="radio" name="regionMode"> 香港</label>
                         <label><input type="radio" name="regionMode"> 粤港</label>
-                        <select id="entrySpecialMode"><option>特殊模式一</option><option>特殊模式二</option></select>
+                        <!-- 第12项：特殊模式改为普通模式/昵称模式 -->
+                        <select id="entrySpecialMode"><option>普通模式</option><option>昵称模式</option></select>
                     </div>
                 </div>
                 <div class="toolbar">
@@ -613,6 +620,8 @@ const State = {
     entryBatchSeq: 0,
     entrySelectedIndices: new Set(),
     lastSavedPureLines: null,
+    entryMode: 'normal', // 第12项：录单模式，normal或nickname
+    entryGroupSeq: 0,    // 第12项：当前累计订单组号
 
     // 特码调单
     specialCodeSelectedRows: new Set(),
@@ -1671,7 +1680,7 @@ window._recognizedTotal = State.recognizedTotal;
                         break;
                     }
                     case 'batchChangeRegion': {
-                        // === 修改第9项：批量修改地区改用下拉框 ===
+                        // 第9项：批量修改地区改用下拉框
                         const modal = document.getElementById('promptModal');
                         const promptDiv = modal.querySelector('div[style]');
                         const originalHTML = promptDiv.innerHTML;
@@ -1803,7 +1812,7 @@ window._recognizedTotal = State.recognizedTotal;
         if (rect.bottom > window.innerHeight) panel.style.top = (window.innerHeight - rect.height - 5) + 'px';
     }
 
-    // === 修改第10项：initEntryTableDragSelect 修复拖选最后一行 ===
+    // 第10项：initEntryTableDragSelect 修复拖选最后一行
     function initEntryTableDragSelect() {
         const tbody = document.getElementById('entryTableBody');
         if (!tbody) return;
@@ -2386,7 +2395,7 @@ window._recognizedTotal = State.recognizedTotal;
         document.getElementById('btn-add-applicant').addEventListener('click',()=>{const input=document.getElementById('new-applicant-name');const name=input.value.trim();if(!name)return showAlert('请输入申报人名称。');if(window.applicants.some(a=>a.name===name)){showAlert('申报人名称已存在，请使用其他名称。');return;}const defaultConfig=window.schemes.length>0?window.schemes[0].name:'47倍计算';window.applicants.push({id:window.nextApplicantId++,name,oddsConfig:defaultConfig});input.value='';window.selectedApplicantId=null;window.renderApplicants();isConfigDirty = true;});
         document.getElementById('new-applicant-name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btn-add-applicant').click();});
         document.getElementById('btn-delete-applicant').addEventListener('click',()=>window.deleteApplicant());
-        // 删除确认按钮事件绑定：已移除 document.getElementById('btn-confirm-applicant') 相关代码
+        // 第8项：不再绑定确认按钮事件，原代码已删除
         document.addEventListener('keydown',e=>{if(e.key==='Delete'&&document.getElementById('applicant-content').classList.contains('active')){if(document.activeElement&&document.activeElement.tagName==='INPUT')return;window.deleteApplicant();}});
         window.renderApplicants();
     })();
@@ -3086,6 +3095,7 @@ window._recognizedTotal = State.recognizedTotal;
             <div class="bg-white border border-gray-300 p-3 flex-shrink-0 rounded shadow-sm">
                 <div class="flex justify-around items-center">${drawHTML}</div>
             </div>
+            <!-- 第6项：兑奖结果框添加 duijiang-result-box 类 -->
             <div class="grid grid-cols-4 gap-3 flex-1 min-h-[80px]">
                 <div class="duijiang-result-box bg-white border border-gray-300 p-2 text-xs rounded shadow-sm overflow-y-auto" style="max-height:250px; overflow-x: hidden; word-break: break-all;"><div class="font-medium mb-1">澳门兑奖结果</div><div>${duijiangMacau}</div></div>
                 <div class="duijiang-result-box bg-white border border-gray-300 p-2 text-xs rounded shadow-sm overflow-y-auto" style="max-height:250px; overflow-x: hidden; word-break: break-all;"><div class="font-medium mb-1">香港兑奖结果</div><div>${duijiangHongkong}</div></div>
@@ -3523,6 +3533,7 @@ window._recognizedTotal = State.recognizedTotal;
         });
 
         const reporters = Object.keys(reporterMap).sort();
+        // 第4项：字体改为 Courier New
         let html = '<div style="font-family:Courier New,Microsoft YaHei,monospace;line-height:1.8;">';
         html += '-------------------按照申报人兑奖结果--------------------------------<br><br>';
 
@@ -4366,7 +4377,7 @@ window._recognizedTotal = State.recognizedTotal;
 
     function renderNumberList(){setTopBar('');const categoryOrder = [  {name:'波色',keys:['红波','蓝波','绿波','红单','红双','蓝单','蓝双','绿单','绿双','红大','红小','蓝大','蓝小','绿大','绿小','红','蓝','绿','兰波','兰','兰单','兰双']},  {name:'单双大小',keys:['单','单数','单号','双','双数','双号','大','大数','大号','小','小数','小号']},  {name:'生肖',keys:shengOrder.concat(shengOrder.map(s=>'老'+s))},  {name:'五行',keys:['金','木','水','火','土']},  {name:'头数',keys:['0头','1头','2头','3头','4头','0头单','1头单','2头单','3头单','4头单','0头双','1头双','2头双','3头双','4头双']},  {name:'尾数',keys:['0尾','1尾','2尾','3尾','4尾','5尾','6尾','7尾','8尾','9尾','小尾','大尾']},  {name:'合数',keys:['合单','合数单','合双','合数双','合大','合小']},  {name:'其他属性',keys:['家禽','家肖','家畜','家','野兽','野肖','野','马边','鼠边','单笔画肖','双笔画肖','吉肖','凶肖','天肖','地肖','阴肖','阳肖','男肖','女肖','朝肖','夕肖','前肖','后肖','左肖','右肖','有偏旁肖','无偏旁肖']},  {name:'各类码',keys:['反数','内围码','外围码','前码','后码','左边码','右边码','楼上码','楼下码','风码','雨码','深码','浅码','拼码','搏码','高码','低码','长码','短码','黑码','白码','冷码','热码','爱码','恨码','顺码','逆码','天码','地码']}];let html='<div style="margin-bottom:12px;"><span style="font-weight:bold;font-size:14px;">本年肖</span> <select id="yearZodiacSelect" style="border:1px solid #d1d5db;padding:2px 8px;border-radius:4px;margin-left:8px;">';shengOrder.forEach(s=>{html+=`<option value="${s}" ${window.yearZodiac===s?'selected':''}>${s}</option>`;});html+='</select></div>';const usedKeys=new Set();let textContent='';categoryOrder.forEach(cat=>{let catText='';cat.keys.forEach(key=>{if(!D[key] || usedKeys.has(key) || /^\d{1,2}$/.test(key)) return;usedKeys.add(key);const nums=D[key].split(/[\s,，]+/).filter(n=>n.trim());const numStr=nums.join(' ');catText+=key+'\t'+numStr+'\n';});if(catText){textContent+='—— '+cat.name+' ——\n'+catText+'\n';}});const remaining=Object.keys(D).filter(k=>!usedKeys.has(k) && !/^\d{1,2}$/.test(k));if(remaining.length>0){let otherText='';remaining.forEach(key=>{const nums=D[key].split(/[\s,，]+/).filter(n=>n.trim());const numStr=nums.join(' ');otherText+=key+'\t'+numStr+'\n';});textContent+='—— 其他 ——\n'+otherText;}return`<div class="bg-white border border-gray-300 rounded shadow-sm flex-1 overflow-auto p-4"><pre style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;margin:0;">${html+'\n'+textContent}</pre></div>`;}
 
-    // === 修改第11项：订单分析页面图表调整 ===
+    // 第11项：订单分析图表调整
     function renderCharts(){
         const weiContainer=document.getElementById('chartPingTeWei');
         if(weiContainer){
@@ -4384,7 +4395,6 @@ window._recognizedTotal = State.recognizedTotal;
                 }
                 weiScaleLabels.innerHTML = labelsHTML;
             }
-            // 增大横轴标签字体
             const weiLabels = document.getElementById('weiLabels');
             if (weiLabels) {
                 weiLabels.style.fontSize = '24px';
@@ -4408,7 +4418,6 @@ window._recognizedTotal = State.recognizedTotal;
                 }
                 xiaoScaleLabels.innerHTML = labelsHTML;
             }
-            // 增大横轴标签字体
             const xiaoLabels = document.getElementById('xiaoLabels');
             if (xiaoLabels) {
                 xiaoLabels.style.fontSize = '24px';
@@ -4419,7 +4428,7 @@ window._recognizedTotal = State.recognizedTotal;
         const report=document.getElementById('analysisReport');
         if(report)report.innerHTML=State.orderList.length===0?'暂无订单数据。':`澳门特码胜负差过大，建议降低亏损大的数字的押注数额。`;
     }
-    function updateSpecialCodeStats(){
+                    function updateSpecialCodeStats(){
         const container=document.getElementById('specialCodeStats');
         if(!container)return;
         const betData=getNumberBetData();
@@ -4923,6 +4932,9 @@ window._recognizedTotal = State.recognizedTotal;
             if(pageName==='addOrder'){
                 document.getElementById('orderEntryModal').style.display='block';
                 State.entryOrders = []; State.entrySelectedIndices.clear();
+                State.entryMode = 'normal'; // 第12项：重置为普通模式
+                State.entryGroupSeq = 0;
+                document.getElementById('entrySpecialMode').value = '普通模式';
                 renderEntryTable();
                 initEntryContextMenu();
                 bindEntryTableDblClick();
@@ -5323,6 +5335,9 @@ window._recognizedTotal = State.recognizedTotal;
                 if(this.getAttribute('data-page')==='addOrder'){
                     document.getElementById('orderEntryModal').style.display='block';
                     State.entryOrders = []; State.entrySelectedIndices.clear();
+                    State.entryMode = 'normal'; // 第12项：重置模式
+                    State.entryGroupSeq = 0;
+                    document.getElementById('entrySpecialMode').value = '普通模式';
                     renderEntryTable();
                     initEntryContextMenu();
                     loadOrderDraft();
@@ -5340,6 +5355,13 @@ window._recognizedTotal = State.recognizedTotal;
             });
         });
         document.getElementById('specialCodeSubmenu').style.display='block';
+
+        // 第12项：绑定模式切换
+        document.getElementById('entrySpecialMode')?.addEventListener('change', function() {
+            State.entryMode = this.value === '昵称模式' ? 'nickname' : 'normal';
+            const ta = getInputArea();
+            if (ta) performRecognition(ta.value);
+        });
 
         // ===== 快捷键 =====
         document.addEventListener('keydown', function(e) {
@@ -6115,13 +6137,187 @@ window._recognizedTotal = State.recognizedTotal;
     }
 
     // ===== 识别入口 =====
+    // 第12项：昵称模式 - 保护昵称行→预处理→按占位符切分组→每组独立解析→不插入分隔标记
     function performRecognition(text) {
       const resultDiv = document.getElementById('orderResult');
-      if (!text || !text.trim()) { if (resultDiv) resultDiv.innerHTML = ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; updateOrderTotalDisplay(); updateMaxLossDisplay(); return; }
+      if (!text || !text.trim()) { 
+        if (resultDiv) resultDiv.innerHTML = ''; 
+        State.pureOrderLines = []; 
+        State.pureOrderRegions = []; 
+        State.cachedMaxLossData = []; 
+        updateOrderTotalDisplay(); 
+        updateMaxLossDisplay(); 
+        return; 
+      }
+
+      const entryMode = State.entryMode || 'normal';
+      const dotRegion = State.dotRegion || 'auto';
+      let currentLineRegion = currentRegion;
+
+      // 昵称模式：先保护昵称行，再预处理，再按昵称切分组
+      if (entryMode === 'nickname') {
+        const rawLines = text.split('\n');
+        const nicknamePlaceholders = [];
+        const protectedLines = [];
+
+        // 第一步：扫描原始文本，找到单独一行的 "xxx:" 昵称行，替换为占位符（从1开始编号）
+        for (let i = 0; i < rawLines.length; i++) {
+          const line = rawLines[i];
+          // 昵称行：独占一行，格式为 "任意字符:"，冒号后面没有订单内容
+          if (/^.+:\s*$/.test(line.trim()) && !/[\d]/.test(line.trim())) {
+            const nickname = line.trim().replace(/:$/, '');
+            // 第12.9项：占位符编号从1开始
+            const placeholder = `###NICKNAME_${nicknamePlaceholders.length + 1}###`;
+            nicknamePlaceholders.push({ placeholder, nickname, index: protectedLines.length });
+            protectedLines.push(placeholder);
+          } else {
+            protectedLines.push(line);
+          }
+        }
+
+        // 第二步：拼接保护后的文本进行预处理
+        const protectedText = protectedLines.join('\n');
+        let processedText = preprocess(protectedText);
+
+        // 第三步：按占位符切分组
+        const lines = processedText.split('\n');
+        const groups = []; // [{ nickname, lines: [] }]
+        let currentGroup = null;
+
+        for (const line of lines) {
+          if (!line.trim()) { continue; }
+          // 检测昵称占位符
+          const phMatch = line.match(/^###NICKNAME_(\d+)###$/);
+          if (phMatch) {
+            if (currentGroup && currentGroup.lines.length > 0) {
+              groups.push(currentGroup);
+            }
+            const idx = parseInt(phMatch[1]);
+            currentGroup = { nickname: nicknamePlaceholders[idx - 1] ? nicknamePlaceholders[idx - 1].nickname : '', lines: [] };
+            continue;
+          }
+          // 普通订单行
+          if (!currentGroup) {
+            currentGroup = { nickname: '', lines: [] };
+          }
+          currentGroup.lines.push(line);
+        }
+        // 保存最后一个分组
+        if (currentGroup && currentGroup.lines.length > 0) {
+          groups.push(currentGroup);
+        }
+
+        // 如果没有识别到昵称分组，走普通模式
+        if (groups.length === 0) {
+          let processedTextAll = preprocess(text);
+          const allLines = processedTextAll.split('\n');
+          const allResults = [];
+          let lastInheritablePlay = null;
+          for (const line of allLines) {
+            if (!line.trim()) { continue; }
+            let orderLine = line;
+            if (dotRegion !== 'auto') { currentLineRegion = dotRegion; }
+            else { const extracted = extractRegion(line); if (extracted) { currentLineRegion = extracted.region; orderLine = extracted.remaining; } }
+            if (!orderLine.trim()) continue;
+            const parsed = processOneLine(orderLine);
+            let lineResults = [];
+            if (parsed.length === 0) { 
+              if (containsDictElement(orderLine)) { 
+                lineResults.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字或有效玩法'], rawLine: orderLine.trim() }); 
+              } 
+            } else { 
+              lineResults.push(...parsed); 
+            }
+            if (lineResults.length > 0) { 
+              const inheritResult = applyInlineInheritance(lineResults, lastInheritablePlay); 
+              lineResults = inheritResult.results; 
+              lastInheritablePlay = inheritResult.lastPlay; 
+              lineResults.forEach(r => { r.region = currentLineRegion; }); 
+              allResults.push(...lineResults); 
+            }
+          }
+          const mergedArray = allResults.map(r => ({
+            category: r.cat, numbers: r.nums, unitAmount: r.amt, totalCount: r.cnt,
+            totalAmount: r.total, kw: r.kw || '', warnings: r.warnings || [],
+            rawLine: r.rawLine || '', region: r.region || currentRegion, _inherited: r._inherited || false
+          }));
+          if (resultDiv) { 
+            if (mergedArray.length === 0) { 
+              resultDiv.innerHTML = ''; 
+              State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; 
+            } else { 
+              displayResults(mergedArray, resultDiv); 
+            } 
+          }
+          updateOrderTotalDisplay(); 
+          updateMaxLossDisplay();
+          return;
+        }
+
+        // 第四步：每组独立解析订单，不插入任何分隔标记
+        const mergedArray = [];
+        let lastInheritablePlay = null;
+
+        for (const group of groups) {
+          const groupLineResults = [];
+
+          for (const line of group.lines) {
+            if (!line.trim()) continue;
+            let orderLine = line;
+            if (dotRegion !== 'auto') { currentLineRegion = dotRegion; }
+            else { const extracted = extractRegion(line); if (extracted) { currentLineRegion = extracted.region; orderLine = extracted.remaining; } }
+            if (!orderLine.trim()) continue;
+
+            const parsed = processOneLine(orderLine);
+            let lineResults = [];
+            if (parsed.length === 0) {
+              if (containsDictElement(orderLine)) {
+                lineResults.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字或有效玩法'], rawLine: orderLine.trim() });
+              }
+            } else {
+              lineResults.push(...parsed);
+            }
+            if (lineResults.length > 0) {
+              const inheritResult = applyInlineInheritance(lineResults, lastInheritablePlay);
+              lineResults = inheritResult.results;
+              lastInheritablePlay = inheritResult.lastPlay;
+              lineResults.forEach(r => { r.region = currentLineRegion; });
+              groupLineResults.push(...lineResults);
+            }
+          }
+
+          if (groupLineResults.length > 0) {
+            // 不插入分隔标记，直接放入订单结果
+            groupLineResults.forEach(r => {
+              mergedArray.push({
+                category: r.cat, numbers: r.nums, unitAmount: r.amt, totalCount: r.cnt,
+                totalAmount: r.total, kw: r.kw || '', warnings: r.warnings || [],
+                rawLine: r.rawLine || '', region: r.region || currentRegion, _inherited: r._inherited || false
+              });
+            });
+          }
+        }
+
+        if (resultDiv) {
+          if (mergedArray.length === 0) {
+            resultDiv.innerHTML = text ? `<div class="result-line">${text}</div>` : '';
+            State.pureOrderLines = [];
+            State.pureOrderRegions = [];
+            State.cachedMaxLossData = [];
+          } else {
+            displayResults(mergedArray, resultDiv);
+          }
+        }
+        updateOrderTotalDisplay();
+        updateMaxLossDisplay();
+        return;
+      }
+
+      // 普通模式：走原逻辑
       let processedText = preprocess(text);
       const lines = processedText.split('\n');
       const allResults = []; const lineRegions = [];
-      let currentLineRegion = currentRegion; const dotRegion = State.dotRegion || 'auto'; let lastInheritablePlay = null;
+      let lastInheritablePlay = null;
 
       for (const line of lines) {
         if (!line.trim()) { continue; }
@@ -6151,7 +6347,9 @@ window._recognizedTotal = State.recognizedTotal;
       let total = 0; let html = ''; const pureLines = []; const pureRegions = []; const maxLossData = [];
       const regionColorMap = { 'macau': '#e74c3c', 'hongkong': '#3498db', 'yuegang': '#27ae60' };
 
-      for (const r of rs) {
+      for (let i = 0; i < rs.length; i++) {
+        const r = rs[i];
+
         if (r.category === '__unrecognized__') {
           const regionLabel = REGION_LABELS[r.region] || ''; const warnText = (r.warnings && r.warnings.length) ? r.warnings.join('；') : '缺少金额关键字或有效玩法';
           if (r.region && r.region !== currentRegion && !r.warnings.length) { html += `<div class="result-line"><span style="color:${regionColorMap[r.region] || '#333'};">${regionLabel}·</span>${r.rawLine} <span style="color:red;">[已提取地区${regionLabel}，但内容无法识别]</span></div>`; }
@@ -6171,7 +6369,10 @@ window._recognizedTotal = State.recognizedTotal;
         const pureNumStr = formatNums(r.category, r.numbers); pureLines.push(`${r.category}:${pureNumStr} ${kwDisplay} ${Math.round(r.unitAmount)}`); pureRegions.push(r.region);
         if (r.category === '特码' || r.category === '特肖') { maxLossData.push({ category: r.category, numbers: r.numbers, unitAmount: Math.round(r.unitAmount) }); }
       }
-      container.innerHTML = html; State.pureOrderLines = pureLines; State.pureOrderRegions = pureRegions; State.cachedMaxLossData = maxLossData;
+      container.innerHTML = html; 
+      State.pureOrderLines = pureLines; 
+      State.pureOrderRegions = pureRegions; 
+      State.cachedMaxLossData = maxLossData;
     }
 
     function formatNums(cat, numsArr) {
@@ -6270,6 +6471,7 @@ window._recognizedTotal = State.recognizedTotal;
 
     let lastSavedPureLines = null;
 
+    // 第12项：修改 saveOrder 支持昵称模式分组保存，修复 calcMethod 取值
     function saveOrder() {
         const reporterName = getEntryReporterSelectValue();
         if (!reporterName) { showAlert('请选择申报人'); return; }
@@ -6293,6 +6495,111 @@ window._recognizedTotal = State.recognizedTotal;
         proceedSave();
 
         function proceedSave() {
+            const entryMode = State.entryMode || 'normal';
+            
+            if (entryMode === 'nickname') {
+                // 昵称模式：从原始输入文本获取分组信息，使用 pureLines 格式解析 calcMethod
+                const ta = getInputArea();
+                if (!ta || !ta.value.trim()) { showAlert('输入框无内容'); return; }
+                
+                const rawText = ta.value;
+                const rawLines = rawText.split('\n');
+                const groups = []; // [{ nickname, lines: [] }]
+                let currentGroup = null;
+                
+                // 扫描原始文本，按昵称行分组
+                for (const line of rawLines) {
+                    if (!line.trim()) { continue; }
+                    // 昵称行：独占一行，冒号后面没有订单内容
+                    if (/^.+:\s*$/.test(line.trim()) && !/[\d]/.test(line.trim())) {
+                        if (currentGroup && currentGroup.lines.length > 0) {
+                            groups.push(currentGroup);
+                        }
+                        const nickname = line.trim().replace(/:$/, '');
+                        currentGroup = { nickname, lines: [] };
+                        continue;
+                    }
+                    if (!currentGroup) {
+                        currentGroup = { nickname: '', lines: [] };
+                    }
+                    currentGroup.lines.push(line.trim());
+                }
+                // 保存最后一个分组
+                if (currentGroup && currentGroup.lines.length > 0) {
+                    groups.push(currentGroup);
+                }
+                
+                if (groups.length === 0) {
+                    saveNormalMode(reporterName);
+                    return;
+                }
+                
+                // 第12.8项修复：使用 pureLines 格式解析确保 calcMethod 正确
+                let groupSeq = State.entryGroupSeq + 1;
+                groups.forEach((group, groupIdx) => {
+                    // 将每组内的行拼接后逐行解析
+                    group.lines.forEach(lineContent => {
+                        // 先用 processOneLine 解析获取类别和号码
+                        const parsed = processOneLine(lineContent);
+                        if (parsed.length === 0) return;
+                        
+                        parsed.forEach(p => {
+                            if (p.cat === '__unrecognized__') return;
+                            
+                            // 构建 pureLines 格式的行来提取准确的 kw
+                            let numbers = Array.isArray(p.nums) ? p.nums.join('-') : (p.nums || '');
+                            let unitAmount = p.amt;
+                            let totalCount = p.cnt || 1;
+                            let totalAmount = p.total || unitAmount * totalCount;
+                            let kw = p.kw || '各';
+                            
+                            // 尝试从识别结果 pureLines 中匹配获取准确的 kw
+                            // pureLines 格式：类别:号码 关键字 金额
+                            const pureLines = State.pureOrderLines || [];
+                            for (const pl of pureLines) {
+                                const plMatch = pl.match(/^(.+?):(.+?)\s+(各|各组|各数|各号)\s*(\d+)/);
+                                if (plMatch && plMatch[1] === p.cat) {
+                                    const plNums = plMatch[2];
+                                    if (plNums === numbers || plNums.replace(/\s+/g, '-') === numbers) {
+                                        kw = plMatch[3];
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            State.entryOrders.push({
+                                region: REGION_LABELS[State.dotRegion === 'auto' ? 'macau' : State.dotRegion] || '澳门',
+                                betType: p.cat || '',
+                                orderInfo: numbers || '',
+                                complexType: '',
+                                calcMethod: kw,
+                                amount: unitAmount,
+                                totalAmount: totalAmount,
+                                reporter: reporterName,
+                                remark: '',
+                                batchSeq: groupSeq + groupIdx
+                            });
+                        });
+                    });
+                });
+                
+                State.entryGroupSeq = groupSeq + groups.length - 1;
+                lastSavedPureLines = [...pureLines];
+                renderEntryTable();
+                clearInput();
+                
+                setTimeout(() => {
+                    const wrapper = document.getElementById('entryTableWrapper');
+                    if (wrapper) {
+                        wrapper.scrollTop = wrapper.scrollHeight;
+                    }
+                }, 100);
+            } else {
+                saveNormalMode(reporterName);
+            }
+        }
+
+        function saveNormalMode(reporterName) {
             const currentBatch = ++State.entryBatchSeq;
             for (let i = 0; i < pureLines.length; i++) {
                 const line = pureLines[i];
@@ -6410,6 +6717,7 @@ window._recognizedTotal = State.recognizedTotal;
 
         State.entryOrders = [];
         State.entrySelectedIndices.clear();
+        State.entryGroupSeq = 0;
         renderEntryTable();
         persistAll();
         State.filterDuijiangDone = false;
