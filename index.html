@@ -4428,7 +4428,7 @@ window._recognizedTotal = State.recognizedTotal;
         const report=document.getElementById('analysisReport');
         if(report)report.innerHTML=State.orderList.length===0?'暂无订单数据。':`澳门特码胜负差过大，建议降低亏损大的数字的押注数额。`;
     }
-                    function updateSpecialCodeStats(){
+      function updateSpecialCodeStats(){
         const container=document.getElementById('specialCodeStats');
         if(!container)return;
         const betData=getNumberBetData();
@@ -6137,7 +6137,7 @@ window._recognizedTotal = State.recognizedTotal;
     }
 
     // ===== 识别入口 =====
-    // 第12项：昵称模式 - 保护昵称行→预处理→按占位符切分组→每组独立解析→不插入分隔标记
+    // 第12项：昵称模式 - 预处理后直接扫描 xxx: 格式行作为分组依据，不插入分隔标记
     function performRecognition(text) {
       const resultDiv = document.getElementById('orderResult');
       if (!text || !text.trim()) { 
@@ -6154,46 +6154,22 @@ window._recognizedTotal = State.recognizedTotal;
       const dotRegion = State.dotRegion || 'auto';
       let currentLineRegion = currentRegion;
 
-      // 昵称模式：先保护昵称行，再预处理，再按昵称切分组
+      // 昵称模式：预处理后直接扫描 xxx: 格式行作为分组依据
       if (entryMode === 'nickname') {
-        const rawLines = text.split('\n');
-        const nicknamePlaceholders = [];
-        const protectedLines = [];
-
-        // 第一步：扫描原始文本，找到单独一行的 "xxx:" 昵称行，替换为占位符（从1开始编号）
-        for (let i = 0; i < rawLines.length; i++) {
-          const line = rawLines[i];
-          // 昵称行：独占一行，格式为 "任意字符:"，冒号后面没有订单内容
-          if (/^.+:\s*$/.test(line.trim()) && !/[\d]/.test(line.trim())) {
-            const nickname = line.trim().replace(/:$/, '');
-            // 第12.9项：占位符编号从1开始
-            const placeholder = `###NICKNAME_${nicknamePlaceholders.length + 1}###`;
-            nicknamePlaceholders.push({ placeholder, nickname, index: protectedLines.length });
-            protectedLines.push(placeholder);
-          } else {
-            protectedLines.push(line);
-          }
-        }
-
-        // 第二步：拼接保护后的文本进行预处理
-        const protectedText = protectedLines.join('\n');
-        let processedText = preprocess(protectedText);
-
-        // 第三步：按占位符切分组
+        let processedText = preprocess(text);
         const lines = processedText.split('\n');
-        const groups = []; // [{ nickname, lines: [] }]
+        const groups = [];
         let currentGroup = null;
 
         for (const line of lines) {
           if (!line.trim()) { continue; }
-          // 检测昵称占位符
-          const phMatch = line.match(/^###NICKNAME_(\d+)###$/);
-          if (phMatch) {
+          // 检测昵称行：xxx: 格式，冒号前有文字，冒号后面没有订单内容（或为空）
+          const nicknameMatch = line.match(/^(.+):\s*$/);
+          if (nicknameMatch && nicknameMatch[1].trim() && !/[\d]/.test(nicknameMatch[1].trim())) {
             if (currentGroup && currentGroup.lines.length > 0) {
               groups.push(currentGroup);
             }
-            const idx = parseInt(phMatch[1]);
-            currentGroup = { nickname: nicknamePlaceholders[idx - 1] ? nicknamePlaceholders[idx - 1].nickname : '', lines: [] };
+            currentGroup = { nickname: nicknameMatch[1].trim(), lines: [] };
             continue;
           }
           // 普通订单行
@@ -6209,11 +6185,9 @@ window._recognizedTotal = State.recognizedTotal;
 
         // 如果没有识别到昵称分组，走普通模式
         if (groups.length === 0) {
-          let processedTextAll = preprocess(text);
-          const allLines = processedTextAll.split('\n');
           const allResults = [];
           let lastInheritablePlay = null;
-          for (const line of allLines) {
+          for (const line of lines) {
             if (!line.trim()) { continue; }
             let orderLine = line;
             if (dotRegion !== 'auto') { currentLineRegion = dotRegion; }
@@ -6246,7 +6220,7 @@ window._recognizedTotal = State.recognizedTotal;
               resultDiv.innerHTML = ''; 
               State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; 
             } else { 
-              displayResults(mergedArray, resultDiv); 
+              displayResults(mergedArray, resultDiv, entryMode); 
             } 
           }
           updateOrderTotalDisplay(); 
@@ -6254,7 +6228,7 @@ window._recognizedTotal = State.recognizedTotal;
           return;
         }
 
-        // 第四步：每组独立解析订单，不插入任何分隔标记
+        // 每组独立解析订单，不插入任何分隔标记
         const mergedArray = [];
         let lastInheritablePlay = null;
 
@@ -6287,7 +6261,6 @@ window._recognizedTotal = State.recognizedTotal;
           }
 
           if (groupLineResults.length > 0) {
-            // 不插入分隔标记，直接放入订单结果
             groupLineResults.forEach(r => {
               mergedArray.push({
                 category: r.cat, numbers: r.nums, unitAmount: r.amt, totalCount: r.cnt,
@@ -6305,7 +6278,7 @@ window._recognizedTotal = State.recognizedTotal;
             State.pureOrderRegions = [];
             State.cachedMaxLossData = [];
           } else {
-            displayResults(mergedArray, resultDiv);
+            displayResults(mergedArray, resultDiv, entryMode);
           }
         }
         updateOrderTotalDisplay();
@@ -6315,11 +6288,11 @@ window._recognizedTotal = State.recognizedTotal;
 
       // 普通模式：走原逻辑
       let processedText = preprocess(text);
-      const lines = processedText.split('\n');
+      const allLines = processedText.split('\n');
       const allResults = []; const lineRegions = [];
       let lastInheritablePlay = null;
 
-      for (const line of lines) {
+      for (const line of allLines) {
         if (!line.trim()) { continue; }
         let orderLine = line;
         if (dotRegion !== 'auto') { currentLineRegion = dotRegion; }
@@ -6335,20 +6308,46 @@ window._recognizedTotal = State.recognizedTotal;
       }
 
       const mergedArray = allResults.map(r => ({ category: r.cat, numbers: r.nums, unitAmount: r.amt, totalCount: r.cnt, totalAmount: r.total, kw: r.kw || '', warnings: r.warnings || [], rawLine: r.rawLine || '', region: r.region || currentRegion, _inherited: r._inherited || false }));
-      if (resultDiv) { if (mergedArray.length === 0) { resultDiv.innerHTML = text ? `<div class="result-line">${text}</div>` : ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; } else { displayResults(mergedArray, resultDiv); } }
+      if (resultDiv) { if (mergedArray.length === 0) { resultDiv.innerHTML = text ? `<div class="result-line">${text}</div>` : ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; } else { displayResults(mergedArray, resultDiv, entryMode); } }
       updateOrderTotalDisplay(); updateMaxLossDisplay();
     }
 
     // ===== 结果展示 =====
-    function displayResults(rs, container) {
+    // 第12.11项：新增 entryMode 参数，昵称模式下在 pureLines 中插入分组标记
+    function displayResults(rs, container, entryMode) {
       if (!container) container = document.getElementById('orderResult');
       if (!container) return;
       if (rs.length === 0) { container.innerHTML = ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; return; }
       let total = 0; let html = ''; const pureLines = []; const pureRegions = []; const maxLossData = [];
       const regionColorMap = { 'macau': '#e74c3c', 'hongkong': '#3498db', 'yuegang': '#27ae60' };
+      // 第12.11项：昵称模式分组状态
+      let isNicknameMode = entryMode === 'nickname';
+      let nicknameGroupIndex = 0;
+      let prevRegion = null;
 
       for (let i = 0; i < rs.length; i++) {
         const r = rs[i];
+
+        // 第12.11项：昵称模式检测分组边界（通过 region 变化或 isSeparator 标记）
+        if (isNicknameMode) {
+          if (r.isSeparator) {
+            // 在 pureLines 中插入特殊标记，用于 saveOrder 识别分组边界
+            pureLines.push('###GROUP_SEPARATOR###');
+            pureRegions.push('');
+            nicknameGroupIndex++;
+            prevRegion = null;
+            continue;
+          }
+          // 如果 region 发生变化且不是第一个，也视为分组边界
+          if (prevRegion !== null && r.region !== prevRegion && r.category !== '__unrecognized__') {
+            pureLines.push('###GROUP_SEPARATOR###');
+            pureRegions.push('');
+            nicknameGroupIndex++;
+          }
+          if (r.category !== '__unrecognized__') {
+            prevRegion = r.region;
+          }
+        }
 
         if (r.category === '__unrecognized__') {
           const regionLabel = REGION_LABELS[r.region] || ''; const warnText = (r.warnings && r.warnings.length) ? r.warnings.join('；') : '缺少金额关键字或有效玩法';
@@ -6471,7 +6470,8 @@ window._recognizedTotal = State.recognizedTotal;
 
     let lastSavedPureLines = null;
 
-    // 第12项：修改 saveOrder 支持昵称模式分组保存，修复 calcMethod 取值
+    // 第12项：修改 saveOrder 支持昵称模式分组保存
+    // 第12.11项：昵称模式改用 pureLines 构建订单，按 ###GROUP_SEPARATOR### 切分组
     function saveOrder() {
         const reporterName = getEntryReporterSelectValue();
         if (!reporterName) { showAlert('请选择申报人'); return; }
@@ -6498,92 +6498,78 @@ window._recognizedTotal = State.recognizedTotal;
             const entryMode = State.entryMode || 'normal';
             
             if (entryMode === 'nickname') {
-                // 昵称模式：从原始输入文本获取分组信息，使用 pureLines 格式解析 calcMethod
-                const ta = getInputArea();
-                if (!ta || !ta.value.trim()) { showAlert('输入框无内容'); return; }
+                // 第12.11项：昵称模式使用 pureLines 构建订单，按 ###GROUP_SEPARATOR### 切分组
+                let currentGroupSeq = State.entryGroupSeq + 1;
+                let groupIdx = 0;
                 
-                const rawText = ta.value;
-                const rawLines = rawText.split('\n');
-                const groups = []; // [{ nickname, lines: [] }]
-                let currentGroup = null;
-                
-                // 扫描原始文本，按昵称行分组
-                for (const line of rawLines) {
-                    if (!line.trim()) { continue; }
-                    // 昵称行：独占一行，冒号后面没有订单内容
-                    if (/^.+:\s*$/.test(line.trim()) && !/[\d]/.test(line.trim())) {
-                        if (currentGroup && currentGroup.lines.length > 0) {
-                            groups.push(currentGroup);
-                        }
-                        const nickname = line.trim().replace(/:$/, '');
-                        currentGroup = { nickname, lines: [] };
+                for (let i = 0; i < pureLines.length; i++) {
+                    const line = pureLines[i];
+                    
+                    // 遇到分组标记 → 递增 batchSeq
+                    if (line === '###GROUP_SEPARATOR###') {
+                        groupIdx++;
+                        currentGroupSeq = State.entryGroupSeq + groupIdx;
                         continue;
                     }
-                    if (!currentGroup) {
-                        currentGroup = { nickname: '', lines: [] };
-                    }
-                    currentGroup.lines.push(line.trim());
-                }
-                // 保存最后一个分组
-                if (currentGroup && currentGroup.lines.length > 0) {
-                    groups.push(currentGroup);
-                }
-                
-                if (groups.length === 0) {
-                    saveNormalMode(reporterName);
-                    return;
-                }
-                
-                // 第12.8项修复：使用 pureLines 格式解析确保 calcMethod 正确
-                let groupSeq = State.entryGroupSeq + 1;
-                groups.forEach((group, groupIdx) => {
-                    // 将每组内的行拼接后逐行解析
-                    group.lines.forEach(lineContent => {
-                        // 先用 processOneLine 解析获取类别和号码
-                        const parsed = processOneLine(lineContent);
-                        if (parsed.length === 0) return;
-                        
-                        parsed.forEach(p => {
-                            if (p.cat === '__unrecognized__') return;
-                            
-                            // 构建 pureLines 格式的行来提取准确的 kw
-                            let numbers = Array.isArray(p.nums) ? p.nums.join('-') : (p.nums || '');
-                            let unitAmount = p.amt;
-                            let totalCount = p.cnt || 1;
-                            let totalAmount = p.total || unitAmount * totalCount;
-                            let kw = p.kw || '各';
-                            
-                            // 尝试从识别结果 pureLines 中匹配获取准确的 kw
-                            // pureLines 格式：类别:号码 关键字 金额
-                            const pureLines = State.pureOrderLines || [];
-                            for (const pl of pureLines) {
-                                const plMatch = pl.match(/^(.+?):(.+?)\s+(各|各组|各数|各号)\s*(\d+)/);
-                                if (plMatch && plMatch[1] === p.cat) {
-                                    const plNums = plMatch[2];
-                                    if (plNums === numbers || plNums.replace(/\s+/g, '-') === numbers) {
-                                        kw = plMatch[3];
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            State.entryOrders.push({
-                                region: REGION_LABELS[State.dotRegion === 'auto' ? 'macau' : State.dotRegion] || '澳门',
-                                betType: p.cat || '',
-                                orderInfo: numbers || '',
-                                complexType: '',
-                                calcMethod: kw,
-                                amount: unitAmount,
-                                totalAmount: totalAmount,
-                                reporter: reporterName,
-                                remark: '',
-                                batchSeq: groupSeq + groupIdx
+                    
+                    const regionKey = pureRegions[i] || (State.dotRegion === 'auto' ? 'macau' : State.dotRegion);
+                    const regionName = REGION_LABELS[regionKey] || '澳门';
+                    let category = '', numbers = '', kw = '', unitAmount = 0, totalCount = 1;
+                    
+                    const match = line.match(/^(.+?):\s*(.+?)\s+(各|各组|各数|各号)\s*(\d+)/);
+                    if (match) {
+                        category = match[1]; numbers = match[2]; kw = match[3]; unitAmount = parseFloat(match[4]) || 0;
+                        if (category.includes('连肖') || category.includes('连尾') || category === '二中二' || category === '三中三' || category === '特碰' || (category && category.includes('不中'))) {
+                            const groups = numbers.match(/\)/g);
+                            totalCount = groups ? groups.length : 1;
+                        } else if (category.startsWith('包')) { totalCount = 1; }
+                        else if (category === '特码') {
+                            const tokens = numbers.split('-').map(t => t.trim()).filter(t => t);
+                            let sum = 0;
+                            tokens.forEach(token => {
+                                if (/^\d{1,2}$/.test(token)) { sum += 1; }
+                                else { const nums = keyToAllNums(token); sum += nums.length || 1; }
                             });
-                        });
+                            totalCount = sum || 1;
+                        }
+                        else if (category === '平特肖' || category === '特肖' || category === '平码') {
+                            totalCount = numbers.split('-').length;
+                        } else { totalCount = 1; }
+                    } else {
+                        const parts = line.split(' ');
+                        if (parts.length >= 2) {
+                            const catNum = parts[0].split(':');
+                            if (catNum.length === 2) { category = catNum[0]; numbers = catNum[1]; }
+                            kw = '各'; unitAmount = parseFloat(parts[parts.length - 1]) || 0;
+                            if (category === '特码') {
+                                const tokens = numbers.split('-').map(t => t.trim()).filter(t => t);
+                                let sum = 0;
+                                tokens.forEach(token => {
+                                    if (/^\d{1,2}$/.test(token)) { sum += 1; }
+                                    else { const nums = keyToAllNums(token); sum += nums.length || 1; }
+                                });
+                                totalCount = sum || 1;
+                            } else if (numbers) {
+                                totalCount = numbers.match(/\)/g) ? numbers.match(/\)/g).length : numbers.split('-').length;
+                            }
+                        }
+                    }
+                    const totalAmount = unitAmount * totalCount;
+                    State.entryOrders.push({
+                        region: regionName,
+                        betType: category || '',
+                        orderInfo: numbers || '',
+                        complexType: '',
+                        calcMethod: kw || '各',
+                        amount: unitAmount,
+                        totalAmount: totalAmount,
+                        reporter: reporterName,
+                        remark: '',
+                        batchSeq: currentGroupSeq
                     });
-                });
+                }
                 
-                State.entryGroupSeq = groupSeq + groups.length - 1;
+                State.entryGroupSeq = currentGroupSeq;
                 lastSavedPureLines = [...pureLines];
                 renderEntryTable();
                 clearInput();
@@ -6595,43 +6581,21 @@ window._recognizedTotal = State.recognizedTotal;
                     }
                 }, 100);
             } else {
-                saveNormalMode(reporterName);
-            }
-        }
-
-        function saveNormalMode(reporterName) {
-            const currentBatch = ++State.entryBatchSeq;
-            for (let i = 0; i < pureLines.length; i++) {
-                const line = pureLines[i];
-                const regionKey = pureRegions[i] || (State.dotRegion === 'auto' ? 'macau' : State.dotRegion);
-                const regionName = REGION_LABELS[regionKey] || '澳门';
-                let category = '', numbers = '', kw = '', unitAmount = 0, totalCount = 1;
-                const match = line.match(/^(.+?):\s*(.+?)\s+(各|各组|各数|各号)\s*(\d+)/);
-                if (match) {
-                    category = match[1]; numbers = match[2]; kw = match[3]; unitAmount = parseFloat(match[4]) || 0;
-                    if (category.includes('连肖') || category.includes('连尾') || category === '二中二' || category === '三中三' || category === '特碰' || (category && category.includes('不中'))) {
-                        const groups = numbers.match(/\)/g);
-                        totalCount = groups ? groups.length : 1;
-                    } else if (category.startsWith('包')) { totalCount = 1; }
-                    else if (category === '特码') {
-                        const tokens = numbers.split('-').map(t => t.trim()).filter(t => t);
-                        let sum = 0;
-                        tokens.forEach(token => {
-                            if (/^\d{1,2}$/.test(token)) { sum += 1; }
-                            else { const nums = keyToAllNums(token); sum += nums.length || 1; }
-                        });
-                        totalCount = sum || 1;
-                    }
-                    else if (category === '平特肖' || category === '特肖' || category === '平码') {
-                        totalCount = numbers.split('-').length;
-                    } else { totalCount = 1; }
-                } else {
-                    const parts = line.split(' ');
-                    if (parts.length >= 2) {
-                        const catNum = parts[0].split(':');
-                        if (catNum.length === 2) { category = catNum[0]; numbers = catNum[1]; }
-                        kw = '各'; unitAmount = parseFloat(parts[parts.length - 1]) || 0;
-                        if (category === '特码') {
+                // 普通模式：原逻辑
+                const currentBatch = ++State.entryBatchSeq;
+                for (let i = 0; i < pureLines.length; i++) {
+                    const line = pureLines[i];
+                    const regionKey = pureRegions[i] || (State.dotRegion === 'auto' ? 'macau' : State.dotRegion);
+                    const regionName = REGION_LABELS[regionKey] || '澳门';
+                    let category = '', numbers = '', kw = '', unitAmount = 0, totalCount = 1;
+                    const match = line.match(/^(.+?):\s*(.+?)\s+(各|各组|各数|各号)\s*(\d+)/);
+                    if (match) {
+                        category = match[1]; numbers = match[2]; kw = match[3]; unitAmount = parseFloat(match[4]) || 0;
+                        if (category.includes('连肖') || category.includes('连尾') || category === '二中二' || category === '三中三' || category === '特碰' || (category && category.includes('不中'))) {
+                            const groups = numbers.match(/\)/g);
+                            totalCount = groups ? groups.length : 1;
+                        } else if (category.startsWith('包')) { totalCount = 1; }
+                        else if (category === '特码') {
                             const tokens = numbers.split('-').map(t => t.trim()).filter(t => t);
                             let sum = 0;
                             tokens.forEach(token => {
@@ -6639,34 +6603,53 @@ window._recognizedTotal = State.recognizedTotal;
                                 else { const nums = keyToAllNums(token); sum += nums.length || 1; }
                             });
                             totalCount = sum || 1;
-                        } else if (numbers) {
-                            totalCount = numbers.match(/\)/g) ? numbers.match(/\)/g).length : numbers.split('-').length;
+                        }
+                        else if (category === '平特肖' || category === '特肖' || category === '平码') {
+                            totalCount = numbers.split('-').length;
+                        } else { totalCount = 1; }
+                    } else {
+                        const parts = line.split(' ');
+                        if (parts.length >= 2) {
+                            const catNum = parts[0].split(':');
+                            if (catNum.length === 2) { category = catNum[0]; numbers = catNum[1]; }
+                            kw = '各'; unitAmount = parseFloat(parts[parts.length - 1]) || 0;
+                            if (category === '特码') {
+                                const tokens = numbers.split('-').map(t => t.trim()).filter(t => t);
+                                let sum = 0;
+                                tokens.forEach(token => {
+                                    if (/^\d{1,2}$/.test(token)) { sum += 1; }
+                                    else { const nums = keyToAllNums(token); sum += nums.length || 1; }
+                                });
+                                totalCount = sum || 1;
+                            } else if (numbers) {
+                                totalCount = numbers.match(/\)/g) ? numbers.match(/\)/g).length : numbers.split('-').length;
+                            }
                         }
                     }
+                    const totalAmount = unitAmount * totalCount;
+                    State.entryOrders.push({
+                        region: regionName,
+                        betType: category || '',
+                        orderInfo: numbers || '',
+                        complexType: '',
+                        calcMethod: kw || '各',
+                        amount: unitAmount,
+                        totalAmount: totalAmount,
+                        reporter: reporterName,
+                        remark: '',
+                        batchSeq: currentBatch
+                    });
                 }
-                const totalAmount = unitAmount * totalCount;
-                State.entryOrders.push({
-                    region: regionName,
-                    betType: category || '',
-                    orderInfo: numbers || '',
-                    complexType: '',
-                    calcMethod: kw || '各',
-                    amount: unitAmount,
-                    totalAmount: totalAmount,
-                    reporter: reporterName,
-                    remark: '',
-                    batchSeq: currentBatch
-                });
+                lastSavedPureLines = [...pureLines];
+                renderEntryTable();
+                clearInput();
+                setTimeout(() => {
+                    const wrapper = document.getElementById('entryTableWrapper');
+                    if (wrapper) {
+                        wrapper.scrollTop = wrapper.scrollHeight;
+                    }
+                }, 100);
             }
-            lastSavedPureLines = [...pureLines];
-            renderEntryTable();
-            clearInput();
-            setTimeout(() => {
-                const wrapper = document.getElementById('entryTableWrapper');
-                if (wrapper) {
-                    wrapper.scrollTop = wrapper.scrollHeight;
-                }
-            }, 100);
         }
     }
 
@@ -6761,4 +6744,4 @@ window._recognizedTotal = State.recognizedTotal;
     });
 </script>
 </body>
-</html>
+</html>                  
