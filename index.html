@@ -58,7 +58,6 @@
         #reportModal .report-header .report-controls button, #orderGroupModal .report-header .report-controls button { width:26px; height:22px; background:none; border:none; font-size:14px; color:#555; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
         #reportModal .report-header .report-controls button:hover, #orderGroupModal .report-header .report-controls button:hover { background:rgba(0,0,0,0.05); color:#333; }
         #reportModal .report-header .report-controls .close-btn:hover, #orderGroupModal .report-header .report-controls .close-btn:hover { background:#e81123; color:white; }
-        /* === 修改第3项：报告/订单组明细正文字体 === */
         #reportModal .report-body, #orderGroupModal .report-body { flex:1; overflow-y:auto; padding:20px; font-family:'Courier New','Microsoft YaHei',monospace; font-size:13px; line-height:1.8; white-space:pre-wrap; word-break:break-all; color:#333; user-select:text; -webkit-user-select:text; }
         #reportModal .report-body .report-negative, #orderGroupModal .report-body .report-negative { color:#dc2626; }
         #reportModal .report-footer, #orderGroupModal .report-footer { display:flex; justify-content:flex-end; gap:10px; padding:10px 16px; border-top:1px solid #e5e7eb; }
@@ -127,7 +126,6 @@
         #configModal tbody tr:hover { background-color:#e8f4ff; } #configModal tbody tr:nth-child(even) { background-color:#f9f9f9; }
         #configModal tbody tr.selected { background-color:#b8daff!important; outline:1px solid #4a90e2; outline-offset:-1px; }
 
-        /* === 修改第7项：申报人表格 overflow 修正 === */
         #configModal .applicant-body { display:flex; gap:10px; flex:1; overflow:visible; min-height:0; }
         #configModal .applicant-list { flex:1; overflow-y:auto; border:1px solid #d0d0d0; max-height:100%; }
         #configModal .applicant-note { width:200px; flex-shrink:0; font-size:12px; color:#666; line-height:1.6; padding:4px; }
@@ -147,9 +145,7 @@
         #orderEntryModal .editor-half { flex:1; display:flex; flex-direction:column; }
         #orderEntryModal .editor-half:first-child { border-right:1px solid #e4e7ed; }
         #orderEntryModal .editor-label { padding:8px 12px; background:#f5f7fa; font-size:13px; color:#909399; border-bottom:1px solid #ebeef5; flex-shrink:0; display:flex; align-items:center; gap:10px; }
-        /* === 修改第1项：录单输入框字体 === */
         #orderEntryModal .editor-half textarea { flex:1; border:none; padding:12px; font-family:'Courier New',monospace; font-size:14px; outline:none; resize:none; color:#303133; }
-        /* === 修改第2项和第5项：识别结果框字体及可选中 === */
         #orderEntryModal .result-div { flex:1; padding:12px; font-family:'Courier New',monospace; font-size:14px; overflow-y:auto; color:#303133; white-space:pre-wrap; word-break:break-all; line-height:1.6; user-select:text; -webkit-user-select:text; }
         #orderEntryModal button { font-size:12px; padding:5px 12px; border:1px solid #dcdfe6; background:#fff; border-radius:3px; cursor:pointer; }
         #orderEntryModal button:hover { color:#409eff; border-color:#c6e2ff; background:#ecf5ff; }
@@ -193,21 +189,18 @@
         .storage-label { color: #000; }
         .storage-value { font-weight: bold; }
 
-        /* 仅当 select 因选项过多需要限高时才生效，保持接近原生下拉外观 */
         select[data-limited="true"] {
             overflow-y: auto;
-            max-height: 12em; /* 约8行 */
+            max-height: 12em;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* 修正：带 size 属性时，让高度自适应，确保能展开 */
         select[size] {
             height: auto !important;
         }
 
-        /* 自定义下拉框样式 */
         .custom-select-wrapper {
             position: relative;
             display: inline-block;
@@ -247,7 +240,7 @@
             border: 1px solid #dcdfe6;
             border-radius: 3px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            max-height: 12em; /* 约8行 */
+            max-height: 12em;
             overflow-y: auto;
             width: max-content;
             min-width: 100%;
@@ -270,13 +263,11 @@
             color: #10b981;
             font-weight: 600;
         }
-        /* 在录单工具栏中需要与其他按钮对齐 */
         #orderEntryModal .toolbar-options .custom-select-wrapper {
             width: auto;
             min-width: 80px;
             vertical-align: middle;
         }
-        /* === 新增第6项：兑奖结果框可选中 === */
         .duijiang-result-box {
             user-select: text;
             -webkit-user-select: text;
@@ -437,7 +428,7 @@
                 <div class="icon">S</div>
                 <div class="title">配置</div>
                 <div class="controls">
-                    <button class="save-config-btn" title="保存并关闭" style="font-size:14px;">💾</button>
+                    <button class="save-config-btn" title="保存" style="font-size:14px;">💾</button>
                     <button class="minimize-btn">─</button>
                     <button class="maximize-btn">□</button>
                     <button class="close-btn">×</button>
@@ -454,9 +445,8 @@
                 <div class="instructions">赔率直接输入数字，返水输入百分比（如6表示6%）。<br>双击赔率或返水单元格可手动编辑，失焦或回车保存。<br><span class="red">内置支持玩法不能删除。</span></div>
             </div>
             <div class="content" id="applicant-content">
-                <div class="toolbar"><button id="btn-add-applicant">添加申报人</button><button id="btn-delete-applicant">删除申报人</button><input type="text" id="new-applicant-name" placeholder="此处输入要添加的申报人"></div>
+                <div class="toolbar"><button id="btn-add-applicant">添加申报人</button><button id="btn-delete-applicant">删除申报人</button><input type="text" id="new-applicant-name" placeholder="此处输入要添加的申报人"><button id="btn-move-up">上移</button><button id="btn-move-down">下移</button></div>
                 <div class="applicant-body"><div class="applicant-list"><table><thead><tr><th>申报人</th><th>赔率配置</th></tr></thead><tbody id="applicant-tbody"></tbody></table></div><div class="applicant-note"><strong>说明：</strong><br><br><span class="red">请至少设置一个申报人。</span><br><br>此处设置的申报人仅作用在录单界面。申报人是用于区别订单归属人。<br>赔率配置选项自动关联"赔率/返水"页的方案列表。<br><br>💡 双击名称可编辑；单击行空白区域可选中，选中后点击删除按钮或按Delete键删除。</div></div>
-                <!-- 第8项：删除确认按钮，不再渲染 HTML 中的按钮 -->
             </div>
         </div>
     </div>
@@ -530,7 +520,7 @@
                         </div>
                         <textarea id="sourceOrderInput" placeholder="在此输入订单数据..."></textarea>
                     </div>
-                    <div class="editor-half"><div class="editor-label">识别结果</div><div class="result-div" id="orderResult"></div></div>
+                    <div class="editor-half"><div class="editor-label">识别结果<span id="recognitionWarning" style="color:red;font-size:12px;margin-left:8px;display:none;"></span></div><div class="result-div" id="orderResult"></div></div>
                 </div>
                 <div class="quick-tags" id="quickTagsContainer"></div>
             </div>
@@ -568,7 +558,7 @@
     </div>
 </div>
 <script>
-    // ===== 通用区域转换函数 =====
+// ===== 通用区域转换函数 =====
 function regionToKey(region) {
     const map = { '澳门': 'macau', '香港': 'hongkong', '粤港': 'yuegang' };
     return map[region] || 'macau';
@@ -1473,7 +1463,6 @@ window._recognizedTotal = State.recognizedTotal;
                     const originalText = td.textContent.trim();
                     const rowIdx = parseInt(row.dataset.index);
                     if (colIndex === 7) {
-                        // 申报人列：使用自定义下拉
                         const wrapper = document.createElement('div');
                         wrapper.className = 'custom-select-wrapper';
                         wrapper.style.width = '100%';
@@ -1486,7 +1475,6 @@ window._recognizedTotal = State.recognizedTotal;
                             State.entryOrders[rowIdx].reporter = newVal;
                             recalcEntryRow(rowIdx);
                         });
-                        // 自动聚焦到下拉框
                         setTimeout(() => {
                             const trigger = wrapper.querySelector('.custom-select-trigger');
                             if (trigger) trigger.click();
@@ -1671,7 +1659,6 @@ window._recognizedTotal = State.recognizedTotal;
                         break;
                     }
                     case 'batchChangeRegion': {
-                        // === 修改第9项：批量修改地区改用下拉框 ===
                         const modal = document.getElementById('promptModal');
                         const promptDiv = modal.querySelector('div[style]');
                         const originalHTML = promptDiv.innerHTML;
@@ -1803,7 +1790,6 @@ window._recognizedTotal = State.recognizedTotal;
         if (rect.bottom > window.innerHeight) panel.style.top = (window.innerHeight - rect.height - 5) + 'px';
     }
 
-    // === 修改第10项：initEntryTableDragSelect 修复拖选最后一行 ===
     function initEntryTableDragSelect() {
         const tbody = document.getElementById('entryTableBody');
         if (!tbody) return;
@@ -1853,7 +1839,6 @@ window._recognizedTotal = State.recognizedTotal;
             if (!isDragging) return;
             startAutoScroll(e);
             let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
-            // 修复：当鼠标在容器下方外侧时，尝试选中最后一行
             if (!tr && wrapper) {
                 const wrapperRect = wrapper.getBoundingClientRect();
                 if (e.clientY > wrapperRect.bottom && e.clientY < wrapperRect.bottom + 30) {
@@ -1913,7 +1898,6 @@ window._recognizedTotal = State.recognizedTotal;
             const originalText = td.textContent.trim();
             const order = State.orderList[realIdx];
             if (colIndex === 9) {
-                // 申报人列：使用自定义下拉
                 const wrapper = document.createElement('div');
                 wrapper.className = 'custom-select-wrapper';
                 wrapper.style.width = '100%';
@@ -2111,23 +2095,19 @@ window._recognizedTotal = State.recognizedTotal;
         let newLeft = rect.left, newTop = rect.top;
         const screenW = window.innerWidth, screenH = window.innerHeight;
 
-        // 右边界：标题栏完全跑出屏幕右侧
         if (rect.left + headerHeight < minVisible) {
             newLeft = minVisible - headerHeight;
         } else if (rect.right - headerHeight > screenW - minVisible) {
             newLeft = screenW - minVisible - rect.width + headerHeight;
         }
-        // 上边界：标题栏完全跑出屏幕顶部
         if (rect.top + headerHeight < minVisible) {
             newTop = minVisible - headerHeight;
         } else if (rect.bottom - headerHeight > screenH - minVisible) {
             newTop = screenH - minVisible - rect.height + headerHeight;
         }
-        // 下边界：标题栏完全跑出屏幕底部
         if (rect.top > screenH - minVisible) {
             newTop = screenH - minVisible;
         }
-        // 左边界：标题栏完全跑出屏幕左侧
         if (rect.left > screenW - minVisible) {
             newLeft = screenW - minVisible;
         }
@@ -2178,7 +2158,6 @@ window._recognizedTotal = State.recognizedTotal;
 
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            // 关闭所有其他下拉框
             document.querySelectorAll('.custom-select-dropdown.show').forEach(d => {
                 if (d !== dropdown) d.classList.remove('show');
             });
@@ -2187,9 +2166,8 @@ window._recognizedTotal = State.recognizedTotal;
                 dropdown.classList.remove('show');
             } else {
                 dropdown.classList.add('show');
-                // 确保向下展开：检测空间，如果下方空间不够则向上
                 const rect = trigger.getBoundingClientRect();
-                const dropdownHeight = Math.min(options.length * 28, 12 * 16 + 8); // 估算高度：最多8行
+                const dropdownHeight = Math.min(options.length * 28, 12 * 16 + 8);
                 const spaceBelow = window.innerHeight - rect.bottom;
                 if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
                     dropdown.style.bottom = '100%';
@@ -2238,41 +2216,79 @@ window._recognizedTotal = State.recognizedTotal;
             }
         }
     }
-    // ========= 配置弹窗逻辑 =========
+// ========= 配置弹窗逻辑 =========
     (function initConfigModal(){
         let isConfigDirty = false;
+        let configSnapshot = null; // 打开配置窗口时的数据快照
+
+        // 保存当前配置快照
+        function takeConfigSnapshot() {
+            configSnapshot = {
+                schemes: JSON.parse(JSON.stringify(window.schemes)),
+                applicants: JSON.parse(JSON.stringify(window.applicants)),
+                selectedSchemeIdx: State.selectedSchemeIdx
+            };
+        }
+
+        // 回滚到快照
+        function restoreConfigSnapshot() {
+            if (!configSnapshot) return;
+            window.schemes = JSON.parse(JSON.stringify(configSnapshot.schemes));
+            window.applicants = JSON.parse(JSON.stringify(configSnapshot.applicants));
+            State.selectedSchemeIdx = configSnapshot.selectedSchemeIdx;
+            isConfigDirty = false;
+            configSnapshot = null;
+        }
 
         // 格式化赔率/返水显示：整数不带小数点，小数保留原位数（去掉末尾多余的0）
         function formatOddsDisplay(val) {
             if (val === null || val === undefined || isNaN(val)) return '0';
             if (Number.isInteger(val)) return val.toString();
-            // 去掉末尾多余的0，但至少保留一位小数
             let s = val.toFixed(10).replace(/0+$/, '').replace(/\.$/, '');
             if (!s.includes('.')) s += '.0';
             return s;
         }
 
         const modal=document.getElementById('configModal');
+
+        // 打开配置窗口时自动拍摄快照
+        const originalOpenConfig = function() {
+            takeConfigSnapshot();
+            modal.style.display = 'block';
+        };
+
         modal.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',function(){const type=this.dataset.tab;if(!type)return;modal.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active');modal.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));document.getElementById(type+'-content').classList.add('active');if(type==='applicant'&&window.renderApplicants)window.renderApplicants();});});
 
+        // 保存按钮：不关闭窗口，弹出确认弹窗后再保存
         modal.querySelector('.save-config-btn').addEventListener('click', async () => {
+            if (!isConfigDirty) {
+                showToast('没有需要保存的修改');
+                return;
+            }
+            const ok = await showConfirm('确定保存当前配置吗？');
+            if (!ok) return;
             await persistAll();
             addOperationLog('配置修改', '保存了赔率/申报人配置');
-            modal.style.display = 'none';
             isConfigDirty = false;
-            if (currentPage === 'orderDetail') switchPage('orderDetail');
+            takeConfigSnapshot(); // 保存后更新快照
+            showToast('保存成功');
         });
 
+        // 关闭按钮：检查是否有未保存修改，取消时回滚
         modal.querySelector('.close-btn').addEventListener('click', async () => {
             if (isConfigDirty) {
                 const ok = await showConfirm('有未保存的修改，是否保存？');
                 if (ok) {
                     await persistAll();
                     addOperationLog('配置修改', '保存了赔率/申报人配置');
+                    isConfigDirty = false;
+                    configSnapshot = null;
+                } else {
+                    // 不保存，回滚到快照
+                    restoreConfigSnapshot();
                 }
             }
             modal.style.display = 'none';
-            isConfigDirty = false;
             if (currentPage === 'orderDetail') switchPage('orderDetail');
         });
 
@@ -2386,11 +2402,55 @@ window._recognizedTotal = State.recognizedTotal;
         document.getElementById('btn-add-applicant').addEventListener('click',()=>{const input=document.getElementById('new-applicant-name');const name=input.value.trim();if(!name)return showAlert('请输入申报人名称。');if(window.applicants.some(a=>a.name===name)){showAlert('申报人名称已存在，请使用其他名称。');return;}const defaultConfig=window.schemes.length>0?window.schemes[0].name:'47倍计算';window.applicants.push({id:window.nextApplicantId++,name,oddsConfig:defaultConfig});input.value='';window.selectedApplicantId=null;window.renderApplicants();isConfigDirty = true;});
         document.getElementById('new-applicant-name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btn-add-applicant').click();});
         document.getElementById('btn-delete-applicant').addEventListener('click',()=>window.deleteApplicant());
-        // 删除确认按钮事件绑定：已移除 document.getElementById('btn-confirm-applicant') 相关代码
+
+        // ===== 上移/下移按钮功能 =====
+        document.getElementById('btn-move-up').addEventListener('click', () => {
+            if (window.selectedApplicantId === null) {
+                showAlert('请先选中一个申报人。');
+                return;
+            }
+            const idx = window.applicants.findIndex(a => a.id === window.selectedApplicantId);
+            if (idx === 0) {
+                showAlert('已经在最顶部，无法上移。');
+                return;
+            }
+            if (idx > 0) {
+                const item = window.applicants.splice(idx, 1)[0];
+                window.applicants.splice(idx - 1, 0, item);
+                window.renderApplicants();
+                isConfigDirty = true;
+            }
+        });
+
+        document.getElementById('btn-move-down').addEventListener('click', () => {
+            if (window.selectedApplicantId === null) {
+                showAlert('请先选中一个申报人。');
+                return;
+            }
+            const idx = window.applicants.findIndex(a => a.id === window.selectedApplicantId);
+            if (idx === window.applicants.length - 1) {
+                showAlert('已经在最底部，无法下移。');
+                return;
+            }
+            if (idx < window.applicants.length - 1) {
+                const item = window.applicants.splice(idx, 1)[0];
+                window.applicants.splice(idx + 1, 0, item);
+                window.renderApplicants();
+                isConfigDirty = true;
+            }
+        });
+
         document.addEventListener('keydown',e=>{if(e.key==='Delete'&&document.getElementById('applicant-content').classList.contains('active')){if(document.activeElement&&document.activeElement.tagName==='INPUT')return;window.deleteApplicant();}});
         window.renderApplicants();
+
+        // 点击配置按钮打开窗口时拍快照
+        document.getElementById('configBtn').addEventListener('click', () => {
+            takeConfigSnapshot();
+            modal.style.display = 'block';
+        });
     })();
-    // ===================== 页面渲染函数 =====================
+
+// ===================== 页面渲染函数 =====================
 
     // 辅助函数：将订单信息中的中奖 token 高亮为红色
     function highlightOrderInfo(orderInfo, winStatus, betType, drawNums) {
@@ -2398,7 +2458,6 @@ window._recognizedTotal = State.recognizedTotal;
         if (winStatus !== '中奖' || !drawNums || drawNums.length < 7) {
             return orderInfo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
-        // 不中玩法中奖，整体高亮
         if (betType && betType.includes('不中')) {
             return '<span class="hit-red">' + orderInfo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
         }
@@ -2935,7 +2994,6 @@ window._recognizedTotal = State.recognizedTotal;
                 <div class="border border-gray-300 bg-white py-1.5 text-center rounded">调整后项数:${Object.keys(adjLmMap).length}</div>
             </div></div><div class="bg-white border border-gray-300 rounded shadow-sm p-2 overflow-y-auto text-xs" style="min-height:150px;max-height:300px;">${reportedHTML}</div><div class="grid grid-cols-3 gap-1 text-xs"><button class="border border-gray-300 bg-white py-1.5 hover:bg-gray-50 rounded">打印连码调整</button><button class="border border-gray-300 bg-white py-1.5 hover:bg-gray-50 rounded">清空输出框</button><button class="border border-gray-300 bg-white py-1.5 hover:bg-gray-50 rounded">重置调整</button></div><div class="flex gap-2 mt-1 mb-2"><input type="text" class="flex-1 border border-gray-300 rounded px-2 py-1 text-xs" placeholder="输入调整记录..."><button class="border border-gray-300 px-3 py-1 text-xs rounded hover:bg-gray-50 bg-white">调整记录</button></div></div></div>`;
     }
-
     function renderOrderDetail(){
         setTopBar('');
         const areas = ['macau','hongkong','yuegang'];
@@ -3063,7 +3121,7 @@ window._recognizedTotal = State.recognizedTotal;
                             <th style="width:7%">计算方式</th>
                             <th style="width:7%">金额</th>
                             <th style="width:8%">订单总额</th>
-                            <th style="width:7%">订单序号</th>
+                            <th style="width:7%">订单条数</th>
                             <th style="width:7%">申报人</th>
                             <th style="width:7%">中奖详情</th>
                             <th style="width:8%">中奖金额</th>
@@ -3075,6 +3133,7 @@ window._recognizedTotal = State.recognizedTotal;
             </div>
             <div class="bg-white border border-gray-300 p-2 text-xs flex justify-between items-center flex-shrink-0 rounded shadow-sm">
                 <span>订单总额：<b>${formatMoney(filteredWithRealIdx.reduce((s,o)=>s+(parseFloat(o.totalAmount)||0),0))}</b></span>
+                <span id="orderGroupCount"></span>
                 <span>状态：<span class="text-green-600 font-medium">${filteredWithRealIdx.length>0?'正常':'无订单'}</span></span>
             </div>
             <div class="grid grid-cols-4 gap-3 text-xs flex-shrink-0">
@@ -3818,7 +3877,6 @@ window._recognizedTotal = State.recognizedTotal;
                 reporters.push(options[i].value);
             }
         }
-        // 如果 filterReporter 为空，直接从订单列表提取
         if (reporters.length === 0) {
             const reporterSet = new Set();
             State.orderList.forEach(o => {
@@ -3987,19 +4045,19 @@ window._recognizedTotal = State.recognizedTotal;
                 const odds = row ? parseFloat(row.odds) : 1;
                 const payout = data.totalWinAmount * odds;
                 totalPayout += payout;
-                winLines += '<span style="user-select:none;">&emsp;&emsp;&emsp;&emsp;●&nbsp;</span>' + data.betType + ' 中: ' + detailStrWin + '——赔:<span style="color:red;">' + formatMoney(payout) + '</span><br>';
+                winLines += '<span style="user-select:none;">&emsp;&emsp;&emsp;&emsp;●&nbsp;</span>' + data.betType + ' 中: <b>' + detailStrWin + '</b>——赔:<b><span style="color:red;">' + formatMoney(payout) + '</span></b><br>';
             });
 
             const profit = totalAmount - rebateAmount - totalPayout;
             const profitInt = Math.round(profit);
             const profitColor = profitInt >= 0 ? '#059669' : '#dc2626';
-            const profitStr = '<span style="color:' + profitColor + ';">' + profitInt + '</span>';
+            const profitStr = '<b><span style="color:' + profitColor + ';">' + profitInt + '</span></b>';
 
             let html = '<div style="font-size:12px;line-height:1.5;padding:4px 0;font-weight:bold;">';
             html += '申报人：' + reporter + '<br>';
-            html += '订单总额：' + formatMoney(totalAmount) + '<br>';
+            html += '订单总额：<b>' + formatMoney(totalAmount) + '</b><br>';
             if (rebateAmount > 0) {
-                html += '返水：' + rebateAmount + '<br>';
+                html += '返水：<b>' + rebateAmount + '</b><br>';
             }
             html += '中奖情况：<br>';
             if (winLines) {
@@ -4384,7 +4442,6 @@ window._recognizedTotal = State.recognizedTotal;
                 }
                 weiScaleLabels.innerHTML = labelsHTML;
             }
-            // 增大横轴标签字体
             const weiLabels = document.getElementById('weiLabels');
             if (weiLabels) {
                 weiLabels.style.fontSize = '24px';
@@ -4408,7 +4465,6 @@ window._recognizedTotal = State.recognizedTotal;
                 }
                 xiaoScaleLabels.innerHTML = labelsHTML;
             }
-            // 增大横轴标签字体
             const xiaoLabels = document.getElementById('xiaoLabels');
             if (xiaoLabels) {
                 xiaoLabels.style.fontSize = '24px';
@@ -4419,7 +4475,7 @@ window._recognizedTotal = State.recognizedTotal;
         const report=document.getElementById('analysisReport');
         if(report)report.innerHTML=State.orderList.length===0?'暂无订单数据。':`澳门特码胜负差过大，建议降低亏损大的数字的押注数额。`;
     }
-        function updateSpecialCodeStats(){
+function updateSpecialCodeStats(){
         const container=document.getElementById('specialCodeStats');
         if(!container)return;
         const betData=getNumberBetData();
@@ -4749,7 +4805,7 @@ window._recognizedTotal = State.recognizedTotal;
 
     function updateMaxLossDisplay() {}
 
-    // ========= 存储信息抽屉更新函数（使用真实数据大小） =========
+    // ========= 存储信息抽屉更新函数 =========
     function updateStoragePanel() {
         const todaySet = new Set();
         for (const o of State.orderList) {
@@ -4772,7 +4828,6 @@ window._recognizedTotal = State.recognizedTotal;
             totalOrders += dateKeys[date].size;
         }
 
-        // 计算真实数据大小（JSON + Blob）
         const allData = {
             orders: State.orderList,
             drawData: State.drawData,
@@ -4816,8 +4871,36 @@ window._recognizedTotal = State.recognizedTotal;
         orderCountEl.textContent = totalOrders;
 
         usedEl.textContent = realSizeStr;
-        // 剩余空间不便用 Blob 估算，保留原值或显示 --
         if (remainingEl) remainingEl.textContent = '--';
+    }
+
+    // 计算并更新订单详情页中的“共xx条”
+    function updateOrderGroupCount() {
+        const span = document.getElementById('orderGroupCount');
+        if (!span) return;
+        const today = State.currentFilterDate;
+        const filterRegion = State.orderDetailFilters.region;
+        const filterBetType = State.orderDetailFilters.betType;
+        const filterWinStatus = State.orderDetailFilters.winStatus;
+        const filterRep = State.orderDetailFilters.reporter;
+
+        let orders = State.orderList.filter(o => o.date === today);
+        if (filterRegion !== '不限') orders = orders.filter(o => o.region === filterRegion);
+        if (filterBetType !== '不限') orders = orders.filter(o => o.betType === filterBetType);
+        if (filterWinStatus !== '不限') orders = orders.filter(o => o.winStatus === filterWinStatus);
+        if (filterRep !== '不限') orders = orders.filter(o => o.reporter === filterRep);
+
+        const reporterSeqMap = {};
+        orders.forEach(o => {
+            const rep = o.reporter || '未知';
+            if (!reporterSeqMap[rep]) reporterSeqMap[rep] = new Set();
+            reporterSeqMap[rep].add(o.orderSeq || 1);
+        });
+        let totalGroups = 0;
+        for (const rep in reporterSeqMap) {
+            totalGroups += reporterSeqMap[rep].size;
+        }
+        span.textContent = '共' + totalGroups + '条';
     }
 
     const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
@@ -4885,7 +4968,6 @@ window._recognizedTotal = State.recognizedTotal;
             if(pageName==='todayDraw'){ bindDrawInputs(); bindTodayDrawControls(); }
             if(pageName==='tools')bindCalcButton();
             if(pageName==='orderDetail'){
-                // 初始化订单详情页的自定义下拉框
                 const filterRegionOpts = ['不限','澳门','香港','粤港'];
                 const filterBetTypeOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.betType))].filter(Boolean);
                 const filterWinStatusOpts = ['不限','中奖','未中奖','未知'];
@@ -4910,6 +4992,7 @@ window._recognizedTotal = State.recognizedTotal;
                 });
 
                 bindOrderDetailEvents();
+                initOrderDetailVirtualScroll();
                 document.getElementById('btnFilterDuijiang')?.addEventListener('click', performFilterDuijiang);
                 document.getElementById('btnComprehensiveDuijiang')?.addEventListener('click', performComprehensiveDuijiang);
                 document.getElementById('btnResetDraw')?.addEventListener('click', () => {
@@ -4919,6 +5002,7 @@ window._recognizedTotal = State.recognizedTotal;
                 document.getElementById('orderSearchInput')?.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') performOrderSearch();
                 });
+                updateOrderGroupCount();
             }
             if(pageName==='addOrder'){
                 document.getElementById('orderEntryModal').style.display='block';
@@ -4926,7 +5010,6 @@ window._recognizedTotal = State.recognizedTotal;
                 renderEntryTable();
                 initEntryContextMenu();
                 bindEntryTableDblClick();
-                // 重新初始化录单窗口申报人下拉，确保选项最新
                 updateEntryReporterSelect();
             }
             if(pageName==='numberList'){
@@ -5223,7 +5306,7 @@ window._recognizedTotal = State.recognizedTotal;
             '各 各号 单 双 大 小 鼠 牛 虎 兔 龙 蛇 马 羊 猴 鸡 狗 猪 金 木 水 火 土',
             '红波 蓝波 绿波 红单 红双  蓝单 蓝双  绿单 绿双  单数 双数 家禽 野兽',
             '平特肖 平特尾 二连肖 三连肖 四连肖 五连肖 二连尾 三连尾 四连尾',
-            '复试 二中二 三中三 五不中 六不中 七不中 八不中 九不中 十不中 十一不中 十二不中 二中特 三中二 特串'
+            '复试 二中二 三中三 五不中 六不中 七不中 八不中 九不中 十不中 十一不中 十二不中 二中特 三中二 特串 拖'
         ];
         container.innerHTML = rows.map(row => { const words = row.split(/\s+/).filter(w => w.trim()); return words.map(w => `<span class="quick-tag">${w}</span>`).join(''); }).join('<br>');
     }
@@ -5273,7 +5356,6 @@ window._recognizedTotal = State.recognizedTotal;
         updateEntryReporterSelect();
         buildQuickTags();
         
-        // 存储信息抽屉初始化
         updateStoragePanel();
         const storageToggle = document.getElementById('storageToggle');
         const storagePanel = document.getElementById('storagePanel');
@@ -5285,7 +5367,6 @@ window._recognizedTotal = State.recognizedTotal;
             });
         }
 
-        // 在 persistAll 中触发更新
         const originalPersistAll = persistAll;
         persistAll = async function(...args) {
             await originalPersistAll.apply(this, args);
@@ -5304,7 +5385,6 @@ window._recognizedTotal = State.recognizedTotal;
             document.getElementById('orderEntryModal').style.display = 'none';
         });
 
-        // 监听录单输入框变化，自动缓存
         const draftTextarea = document.getElementById('sourceOrderInput');
         if (draftTextarea) {
             draftTextarea.addEventListener('input', function() {
@@ -5341,7 +5421,6 @@ window._recognizedTotal = State.recognizedTotal;
         });
         document.getElementById('specialCodeSubmenu').style.display='block';
 
-        // ===== 快捷键 =====
         document.addEventListener('keydown', function(e) {
             if (e.altKey && e.key === '1') {
                 e.preventDefault();
@@ -5431,7 +5510,7 @@ window._recognizedTotal = State.recognizedTotal;
       return d;
     }
     const D = buildDict();
-    const KW_LIST = ['每一注', '每组各', '每个数', '各数', '各组', '每组', '每数', '每号', '各号', '号各', '各码', '各注', '个号', '个数', '组各', '各下', '各买', '一注', '个组', '每个', '各', '组', '注', '名', '=', '＝', '下', '买', '个', '共', '每', '打', '投', '号', '各号码', '每个号', '每个号码', '个号码', '各号各', '个号各', '每号', '每号码'];
+    const KW_LIST = ['每一注', '每组各', '每个数', '各数', '各组', '每组', '每数', '每号', '各号', '号各', '各码', '各注', '个号', '个数', '组各', '各下', '各买', '一注', '个组', '每个', '各', '组', '注', '名', '=', '＝', '下', '买', '个', '共', '每', '打', '投', '号', '各号码', '每个号', '每个号码', '个号码', '各号各', '个号各', '每号', '每号码', '每颗', '格'];
 
     function keyToAllNums(key) { if (!D[key]) return []; const val = D[key]; if (/[鼠牛虎兔龙蛇马羊猴鸡狗猪]/.test(val)) { const ns = []; for (const z of val) { if (ZODIAC_NUMS[z]) { ZODIAC_NUMS[z].split(/[\s,，]+/).forEach(n => ns.push(n)); } } return ns.sort((a, b) => parseInt(a) - parseInt(b)); } return val.split(/[\s,，]+/).filter(n => n.trim()); }
     function toNum(s) { if (!s) return 0; s = String(s).trim(); if (/^-?\d+(\.\d+)?$/.test(s)) return parseFloat(s); const m = { 零: 0, 〇: 0, 一: 1, 壹: 1, 二: 2, 贰: 2, 两: 2, 三: 3, 叁: 3, 四: 4, 肆: 4, 五: 5, 伍: 5, 六: 6, 陆: 6, 七: 7, 柒: 7, 八: 8, 捌: 8, 九: 9, 玖: 9 }; const u = { 十: 10, 拾: 10, 百: 100, 佰: 100, 千: 1000, 仟: 1000, 万: 10000 }; let r = 0, c = 0, t = 0; for (let i = 0; i < s.length; i++) { const ch = s[i]; if (m[ch] !== undefined) { t = m[ch]; } else if (u[ch] !== undefined) { const ut = u[ch]; if (t === 0 && (ch == '十' || ch == '拾')) t = 1; if (ut >= 10000) { c = (c + t) * ut; r += c; c = 0; } else { c += t * ut; } t = 0; } } r += c + t; return r || 0; }
@@ -5477,6 +5556,7 @@ window._recognizedTotal = State.recognizedTotal;
         '复三': '复式三', '复三尾': '复式三连尾',
         '復制': '复式', '复示': '复式', '覆式': '复式',
         '単': '单', '組': '组', '毎': '每',
+        '㺅': '猴', '𤠣': '猴',
     };
 
     const PLAY_NAMES = [
@@ -5674,7 +5754,6 @@ window._recognizedTotal = State.recognizedTotal;
 
       const multiMatches = []; const lockedIntervals = [];
 
-      // 修复6：连肖无关键字整行及带关键字版本 (最高优先级)
       const reLianXiaoNoKw = new RegExp(`^[\\s]*((?:[${Z}]+))[\\s]*([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)[\\s]*(?:(${KW_GROUP})\\s*)?(${AMT_GROUP})\\s*$`, 'gm');
       let mLX;
       while ((mLX = reLianXiaoNoKw.exec(text)) !== null) {
@@ -5699,7 +5778,6 @@ window._recognizedTotal = State.recognizedTotal;
         lockedIntervals.push({ start: mLX.index, end: mLX.index + mLX[0].length });
       }
 
-      // 修复6补：玩法在前，生肖在后的无关键字连肖
       const reLianXiaoNoKw2 = new RegExp(`^[\\s]*([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)[\\s，,]*((?:[${Z}]+))\\s*(${AMT_GROUP})\\s*$`, 'gm');
       let mLX2;
       while ((mLX2 = reLianXiaoNoKw2.exec(text)) !== null) {
@@ -5721,6 +5799,29 @@ window._recognizedTotal = State.recognizedTotal;
         if (comb.length > 1) warnings.push('缺少金额关键字');
         multiMatches.push({ start: mLX2.index, end: mLX2.index + mLX2[0].length, result: { cat: k + '连肖', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw: '各组', warnings } });
         lockedIntervals.push({ start: mLX2.index, end: mLX2.index + mLX2[0].length });
+      }
+
+      const reLianXiaoNoKw3 = new RegExp(`^[\\s]*([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)[\\s]*((?:[${Z}]+))[\\s]*[\\/]?\\s*(${AMT_GROUP})\\s*$`, 'gm');
+      let mLX3;
+      while ((mLX3 = reLianXiaoNoKw3.exec(text)) !== null) {
+        if (isOverlap(mLX3.index, mLX3.index + mLX3[0].length, lockedIntervals)) continue;
+        const k = toNum(mLX3[1].replace(/[^0-9二三四五两]/g, ''));
+        if (!k || k < 2 || k > 5) continue;
+        const zPart = mLX3[2];
+        const amt = toNum(mLX3[3] || mLX3[4]);
+        if (!amt || amt <= 0) continue;
+        const zChars = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []).join('');
+        if (zChars.length !== k) {
+          const warnings = [`${zChars}：连肖数(${k})与生肖数(${zChars.length})不匹配`];
+          multiMatches.push({ start: mLX3.index, end: mLX3.index + mLX3[0].length, result: { cat: k + '连肖', nums: [], amt, cnt: 0, total: 0, kw: '', warnings } });
+          lockedIntervals.push({ start: mLX3.index, end: mLX3.index + mLX3[0].length });
+          continue;
+        }
+        const comb = zCombosKeepOrder(zChars, k);
+        const warnings = [];
+        if (comb.length > 1) warnings.push('缺少金额关键字');
+        multiMatches.push({ start: mLX3.index, end: mLX3.index + mLX3[0].length, result: { cat: k + '连肖', nums: comb, amt, cnt: comb.length, total: amt * comb.length, kw: '', warnings } });
+        lockedIntervals.push({ start: mLX3.index, end: mLX3.index + mLX3[0].length });
       }
 
       const reMultiLX = new RegExp(`([二三四五2345两])(?:连肖|连[肖]?|肖连|肖全中|连?肖|肖中|连)${SEP}((?:[${Z}]+${SEP_CHARS}+)+[${Z}]+)[\\s]*(?=${KW_GROUP})${KW_GROUP}${SEP}${AMT_GROUP}`, 'g');
@@ -5756,7 +5857,6 @@ window._recognizedTotal = State.recognizedTotal;
 
       const addMatch = (re, handler) => { let m; while ((m = re.exec(text)) !== null) { if (isOverlap(m.index, m.index + m[0].length, lockedIntervals)) continue; const info = handler(m); if (info) { allMatches.push({ start: m.index, end: m.index + m[0].length, result: info }); } } };
 
-      // 特肖前缀识别
       addMatch(new RegExp(`特肖${SEP}((?:[${Z}]+${SEP_CHARS}*)+?)[\\s]*${END_AMT_RE}`, 'g'), m => {
         const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null;
         const zPart = m[1]; const zodiacs = (zPart.match(new RegExp(`[${Z}]`, 'g')) || []); if (zodiacs.length === 0) return null;
@@ -5764,7 +5864,6 @@ window._recognizedTotal = State.recognizedTotal;
         return { cat: '特肖', nums: zodiacs, amt, cnt: zodiacs.length, total: amt * zodiacs.length, kw: kw || '各', warnings };
       });
 
-      // 包玩法识别
       const BAO_ATTRS = ['红波','蓝波','绿波','红单','红双','蓝单','蓝双','绿单','绿双','红大','红小','蓝大','蓝小','绿大','绿小','单','双','大','小','家禽','野兽'];
       const BAO_ATTRS_SORTED = [...BAO_ATTRS].sort((a, b) => b.length - a.length);
       addMatch(new RegExp(`包${SEP}(${BAO_ATTRS_SORTED.join('|')})\\s*(\\d+)`, 'g'), m => {
@@ -5773,19 +5872,14 @@ window._recognizedTotal = State.recognizedTotal;
         return { cat: '包' + attr, nums: [attr], amt, cnt: 1, total: amt, kw: '各' };
       });
 
-      // 特碰：碰法
       addMatch(new RegExp(`特碰${SEP}((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*)${SEP_CHARS}*(?:碰)${SEP_CHARS}*((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*?)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const leftPart = m[1], rightPart = m[2]; return handleDragMatch(leftPart, rightPart, amt, kw, '特碰'); });
 
-      // 二中二拖法
       addMatch(new RegExp(`[二2]中[二2]${SEP}((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*)${SEP_CHARS}*(?:拖|托)${SEP_CHARS}*((?:[${Z}]+|\\d+尾|\\d{1,2})(?:${SEP_CHARS}+(?:[${Z}]+|\\d+尾|\\d{1,2}))*?)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const leftPart = m[1], rightPart = m[2]; return handleDragMatch(leftPart, rightPart, amt, kw, '二中二'); });
 
-      // 复式二中二（含二中二复试等变体）
       addMatch(new RegExp(`复[式试]?[二2]中[二2]${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = combosNoSort(nums, 2).map(c => c.join('-')); if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '二中二', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
 
-      // 非复式二中二
       addMatch(new RegExp(`[二2]中[二2]${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = []; const pr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let pm; while ((pm = pr.exec(numPart)) !== null) { pairs.push(pm[1] + '-' + pm[2]); } if (pairs.length === 0) { const nums = extractNums(numPart); if (nums.length % 2 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与二中二不匹配`); return { cat: '二中二', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 2).forEach(c => pairs.push(c.join('-'))); } if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '二中二', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
 
-      // 第10点：号码对列表 + 玩法名 顺序（非复式二中二/三中三/特碰）
       addMatch(new RegExp(`((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)[\\s]*([二2]中[二2]|[三3]中[三3]|特碰)[\\s]*(${KW_GROUP})${SEP}${AMT_GROUP}`, 'g'), m => {
         const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null;
         const numPart = m[1]; const playName = m[2].trim();
@@ -5809,7 +5903,6 @@ window._recognizedTotal = State.recognizedTotal;
         return { cat: playName, nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings };
       });
 
-      // 第11点：号码串 + 复式玩法 顺序（复式二中二/三中三/特碰）
       addMatch(new RegExp(`((?:\\d+${SEP_CHARS}+)+\\d+)[\\s]*(复[式试]?(?:[二2]中[二2]|[三3]中[三3]|特碰))[\\s]*(${KW_GROUP})${SEP}${AMT_GROUP}`, 'g'), m => {
         const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null;
         const nums = extractNums(m[1]); const playPart = m[2].trim();
@@ -5825,7 +5918,6 @@ window._recognizedTotal = State.recognizedTotal;
         return { cat, nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings };
       });
 
-      // 其余原有规则保持不变...
       addMatch(new RegExp(`复[式试]?特碰${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = combosNoSort(nums, 2).map(c => c.join('-')); if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '特碰', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
       addMatch(new RegExp(`特碰${SEP}((?:\\d{1,2}${SEP_CHARS}+\\d{1,2}${SEP_CHARS}*)+)(?!${SEP_CHARS}*[拖托碰])[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const numPart = m[1]; const invalidNums = findInvalidNums(numPart); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const pairs = []; const pr = new RegExp(`(\\d{1,2})${SEP_CHARS}+(\\d{1,2})`, 'g'); let pm; while ((pm = pr.exec(numPart)) !== null) { pairs.push(pm[1] + '-' + pm[2]); } if (pairs.length === 0) { const nums = extractNums(numPart); if (nums.length % 2 !== 0 || nums.length === 0) { warnings.push(`号码数(${nums.length})与特碰不匹配`); return { cat: '特碰', nums: [], amt, cnt: 0, total: 0, kw, warnings }; } const uniq = [...new Set(nums)].sort((a, b) => parseInt(a) - parseInt(b)); combosNoSort(uniq, 2).forEach(c => pairs.push(c.join('-'))); } if (pairs.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '特碰', nums: pairs, amt, cnt: pairs.length, total: amt * pairs.length, kw, warnings }; });
       addMatch(new RegExp(`复[式试]?[三3]中[三3]${SEP}((?:\\d+${SEP_CHARS}+)+\\d+)[\\s]*${END_AMT_RE}`, 'g'), m => { const full = m[0]; const { amt, kw } = extractAmtAndKw(full); if (!amt || amt <= 0) return null; const nums = extractNums(m[1]); const invalidNums = findInvalidNums(m[1]); const warnings = invalidNums.length ? ['无效号码: ' + invalidNums.join(', ')] : []; const triples = combosNoSort(nums, 3).map(c => c.join('-')); if (triples.length > 1 && !kw) warnings.push('缺少金额关键字'); return { cat: '三中三', nums: triples, amt, cnt: triples.length, total: amt * triples.length, kw, warnings }; });
@@ -5866,10 +5958,9 @@ window._recognizedTotal = State.recognizedTotal;
     }
 
     // ===== 单行解析 =====
-    function processOneLine(line) {
+    function processOneLine(line, inheritedPlay = null) {
       if (!line.trim()) return [];
 
-      // 号码-金额对识别
       const defaultSuffixes = ['米', '元', '块', '角', '分', '厘', '眯', '咪', '井', '#', '快', '斤'];
       const userSuffixes = getCustomAmountSuffixes();
       const combinedSuffixes = [...new Set([...defaultSuffixes, ...userSuffixes])];
@@ -5980,9 +6071,13 @@ window._recognizedTotal = State.recognizedTotal;
               else { results.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字'], rawLine: remaining }); }
             }
           } else if (remaining && containsDictElement(remaining)) {
-            const teXiaoResult = tryMatchTeXiao(remaining);
-            if (teXiaoResult) { results.push(teXiaoResult); }
-            else { results.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字或有效玩法'], rawLine: remaining }); }
+            if (inheritedPlay && !new RegExp(`(${KW_LIST.join('|')})`).test(remaining)) {
+              results.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: [], rawLine: remaining });
+            } else {
+              const teXiaoResult = tryMatchTeXiao(remaining);
+              if (teXiaoResult) { results.push(teXiaoResult); }
+              else { results.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字或有效玩法'], rawLine: remaining }); }
+            }
           }
         }
       }
@@ -5995,6 +6090,11 @@ window._recognizedTotal = State.recognizedTotal;
             const amtMatch = line.match(/(各(?:数|号|组|码|注|下|买)?)\s*(\d+)/);
             if (amtMatch) { const amt = toNum(amtMatch[2]); if (start >= 1 && end <= 49 && start <= end && amt > 0) { const nums = []; for (let i = start; i <= end; i++) { nums.push(String(i).padStart(2, '0')); } return [{ cat: '特码', nums: nums, amt: amt, cnt: nums.length, total: amt * nums.length, kw: amtMatch[1], warnings: [] }]; } else { return [{ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['号码范围无效，请检查'], rawLine: line.trim() }]; } }
             else { return [{ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字'], rawLine: line.trim() }]; }
+          }
+        }
+        if (inheritedPlay && !new RegExp(`(${KW_LIST.join('|')})`).test(line)) {
+          if (containsDictElement(line)) {
+            return [{ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: [], rawLine: line.trim() }];
           }
         }
         const teXiaoResult = tryMatchTeXiao(line);
@@ -6131,7 +6231,7 @@ window._recognizedTotal = State.recognizedTotal;
         lineRegions.push(currentLineRegion);
         if (!orderLine.trim()) continue;
 
-        const parsed = processOneLine(orderLine);
+        const parsed = processOneLine(orderLine, lastInheritablePlay);
         let lineResults = [];
         if (parsed.length === 0) { if (containsDictElement(orderLine)) { lineResults.push({ cat: '__unrecognized__', nums: [], amt: 0, cnt: 0, total: 0, kw: '', warnings: ['缺少金额关键字或有效玩法'], rawLine: orderLine.trim() }); } }
         else { lineResults.push(...parsed); }
@@ -6143,21 +6243,24 @@ window._recognizedTotal = State.recognizedTotal;
       updateOrderTotalDisplay(); updateMaxLossDisplay();
     }
 
-    // ===== 结果展示 =====
+    // ===== 结果展示（含警告点击定位及自动滚动） =====
     function displayResults(rs, container) {
       if (!container) container = document.getElementById('orderResult');
       if (!container) return;
       if (rs.length === 0) { container.innerHTML = ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; return; }
       let total = 0; let html = ''; const pureLines = []; const pureRegions = []; const maxLossData = [];
       const regionColorMap = { 'macau': '#e74c3c', 'hongkong': '#3498db', 'yuegang': '#27ae60' };
+      let warningCount = 0;
 
       for (const r of rs) {
         if (r.category === '__unrecognized__') {
           const regionLabel = REGION_LABELS[r.region] || ''; const warnText = (r.warnings && r.warnings.length) ? r.warnings.join('；') : '缺少金额关键字或有效玩法';
           if (r.region && r.region !== currentRegion && !r.warnings.length) { html += `<div class="result-line"><span style="color:${regionColorMap[r.region] || '#333'};">${regionLabel}·</span>${r.rawLine} <span style="color:red;">[已提取地区${regionLabel}，但内容无法识别]</span></div>`; }
-          else { html += `<div class="result-line"><span style="color:${r.region !== currentRegion ? (regionColorMap[r.region] || '#e74c3c') : '#000'};">${regionLabel}·</span>${r.rawLine} <span style="color:red;">[${warnText}]</span></div>`; }
+          else { html += `<div class="result-line"><span style="color:${r.region !== currentRegion ? (regionColorMap[r.region] || '#e74c3c') : '#000'};">${regionLabel}·</span>${r.rawLine} <span class="warning-text" style="color:red;cursor:pointer;" data-rawline="${r.rawLine.replace(/"/g, '&quot;')}">[${warnText}]</span></div>`; }
+          warningCount++;
           continue;
         }
+        if (r.warnings && r.warnings.length) { warningCount++; }
         total += r.totalAmount;
         const regionLabel = REGION_LABELS[r.region] || ''; const isCurrentRegion = r.region === currentRegion;
         const regionColor = isCurrentRegion ? 'color:#000;' : `color:${regionColorMap[r.region] || '#333'};`;
@@ -6166,12 +6269,62 @@ window._recognizedTotal = State.recognizedTotal;
         const numStr = formatNums(r.category, r.numbers);
         let line = `<span style="${regionColor}">${regionLabel}·</span>${r.category}:${numStr}${amountStr} ${info}`;
         if (r._inherited) { line += ` <span style="color:#27ae60;">[继承]</span>`; }
-        if (r.warnings && r.warnings.length) { line += ` <span style="color:red;">[${r.warnings.join('；')}]</span>`; }
+        if (r.warnings && r.warnings.length) { line += ` <span class="warning-text" style="color:red;cursor:pointer;" data-rawline="${r.rawLine.replace(/"/g, '&quot;')}">[${r.warnings.join('；')}]</span>`; }
         html += `<div class="result-line">${line}</div>`;
         const pureNumStr = formatNums(r.category, r.numbers); pureLines.push(`${r.category}:${pureNumStr} ${kwDisplay} ${Math.round(r.unitAmount)}`); pureRegions.push(r.region);
         if (r.category === '特码' || r.category === '特肖') { maxLossData.push({ category: r.category, numbers: r.numbers, unitAmount: Math.round(r.unitAmount) }); }
       }
       container.innerHTML = html; State.pureOrderLines = pureLines; State.pureOrderRegions = pureRegions; State.cachedMaxLossData = maxLossData;
+
+      // 绑定警告点击事件
+      container.querySelectorAll('.warning-text').forEach(span => {
+        span.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const rawLine = this.getAttribute('data-rawline');
+          if (!rawLine) return;
+          const ta = document.getElementById('sourceOrderInput');
+          if (!ta) return;
+          const text = ta.value;
+          const lines = text.split('\n');
+          let targetLineIndex = -1;
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim() === rawLine.trim()) {
+              targetLineIndex = i;
+              break;
+            }
+          }
+          if (targetLineIndex !== -1) {
+            let pos = 0;
+            for (let i = 0; i < targetLineIndex; i++) {
+              pos += lines[i].length + 1;
+            }
+            pos += lines[targetLineIndex].length;
+            ta.focus();
+            ta.setSelectionRange(pos, pos);
+            // 自动滚动到可见区域
+            const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 20;
+            const targetScrollTop = targetLineIndex * lineHeight;
+            const visibleHeight = ta.clientHeight;
+            if (targetScrollTop < ta.scrollTop || targetScrollTop > ta.scrollTop + visibleHeight - lineHeight) {
+              ta.scrollTop = targetScrollTop - visibleHeight / 2 + lineHeight / 2;
+            }
+          } else {
+            showToast('未在源输入框中找到对应行');
+          }
+        });
+      });
+
+      // 更新识别结果标题的警告汇总
+      const warnSpan = document.getElementById('recognitionWarning');
+      if (warnSpan) {
+        if (warningCount > 0) {
+          warnSpan.textContent = '⚠ ' + warningCount + '条警告';
+          warnSpan.style.display = 'inline';
+        } else {
+          warnSpan.textContent = '';
+          warnSpan.style.display = 'none';
+        }
+      }
     }
 
     function formatNums(cat, numsArr) {
@@ -6451,6 +6604,105 @@ window._recognizedTotal = State.recognizedTotal;
       bindEntryButtons();
       initQuickTagsClick();
     });
+
+    // ========= 订单详情虚拟滚动 =========
+    function initOrderDetailVirtualScroll() {
+        const wrapper = document.getElementById('orderDetailTableWrapper');
+        const tbody = document.getElementById('orderDetailTbody');
+        if (!wrapper || !tbody) return;
+
+        const ROW_HEIGHT = 28;
+        let allOrders = [];
+        let totalHeight = 0;
+        let visibleCount = 0;
+        let startIdx = 0;
+
+        function updateVisibleRows() {
+            const scrollTop = wrapper.scrollTop;
+            startIdx = Math.floor(scrollTop / ROW_HEIGHT);
+            const endIdx = Math.min(startIdx + visibleCount + 5, allOrders.length);
+            renderRows(startIdx, endIdx);
+        }
+
+        function renderRows(start, end) {
+            const fragment = document.createDocumentFragment();
+            const topSpacer = document.createElement('tr');
+            topSpacer.style.height = (start * ROW_HEIGHT) + 'px';
+            topSpacer.innerHTML = '<td colspan="12" style="padding:0;border:none;"></td>';
+            fragment.appendChild(topSpacer);
+
+            for (let i = start; i < end; i++) {
+                const o = allOrders[i];
+                const rowClass = State.selectedOrderIndices.has(o._realIdx) ? 'selected' : '';
+                const info = o.orderInfo || '';
+                const winDisplay = o.winStatus === '中奖' ? `<span style="color:red;font-weight:bold;">中奖</span>` : (o.winStatus === '未中奖' ? '未中奖' : '未知');
+                const highlightedInfo = highlightOrderInfo(info, o.winStatus, o.betType, null);
+                const winAmountHtml = o.winStatus === '中奖' && o.winAmount ? `<span class="win-amount-red">${formatMoney(parseFloat(o.winAmount))}</span>` : '';
+                const tr = document.createElement('tr');
+                tr.className = `order-row ${rowClass}`;
+                tr.setAttribute('data-index', i);
+                tr.setAttribute('data-real-index', o._realIdx);
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${o.region}</td>
+                    <td>${(o.betType || '').trim()}</td>
+                    <td class="order-info-cell" title="${info.replace(/"/g,'&quot;')}">${highlightedInfo}</td>
+                    <td>${o.calcMethod || ''}</td>
+                    <td>${formatMoney(o.amount)}</td>
+                    <td>${formatMoney(o.totalAmount)}</td>
+                    <td>${o.orderSeq || ''}条</td>
+                    <td>${o.reporter || ''}</td>
+                    <td>${winDisplay}</td>
+                    <td>${winAmountHtml}</td>
+                    <td>${o.remark || ''}</td>
+                `;
+                fragment.appendChild(tr);
+            }
+
+            const bottomHeight = totalHeight - end * ROW_HEIGHT;
+            if (bottomHeight > 0) {
+                const bottomSpacer = document.createElement('tr');
+                bottomSpacer.style.height = bottomHeight + 'px';
+                bottomSpacer.innerHTML = '<td colspan="12" style="padding:0;border:none;"></td>';
+                fragment.appendChild(bottomSpacer);
+            }
+
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
+        }
+
+        function initData() {
+            const today = State.currentFilterDate;
+            const filterRegion = State.orderDetailFilters.region;
+            const filterBetType = State.orderDetailFilters.betType;
+            const filterWinStatus = State.orderDetailFilters.winStatus;
+            const filterRep = State.orderDetailFilters.reporter;
+
+            allOrders = [];
+            for (let i = 0; i < State.orderList.length; i++) {
+                const o = State.orderList[i];
+                if (o.date !== today) continue;
+                if (filterRegion !== '不限' && o.region !== filterRegion) continue;
+                if (filterBetType !== '不限' && o.betType !== filterBetType) continue;
+                if (filterWinStatus !== '不限' && o.winStatus !== filterWinStatus) continue;
+                if (filterRep !== '不限' && o.reporter !== filterRep) continue;
+                allOrders.push({ ...o, _realIdx: i });
+            }
+
+            totalHeight = allOrders.length * ROW_HEIGHT;
+            visibleCount = Math.ceil(wrapper.clientHeight / ROW_HEIGHT) + 2;
+            updateVisibleRows();
+        }
+
+        wrapper.removeEventListener('scroll', updateVisibleRows);
+        wrapper.addEventListener('scroll', updateVisibleRows);
+
+        initData();
+
+        window._refreshVirtualScroll = function() {
+            initData();
+        };
+    }
 </script>
 </body>
 </html>
