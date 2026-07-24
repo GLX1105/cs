@@ -969,12 +969,15 @@ window._recognizedTotal = State.recognizedTotal;
     // ========= 语义转换 =========
     async function semanticReplace() {
         const ta = getInputArea();
-        if (!ta) return;
+        if (!ta) { showToast('未找到输入框'); return; }
         const start = ta.selectionStart, end = ta.selectionEnd;
         if (start === end) { showToast('请先选择文本'); return; }
         const selected = ta.value.substring(start, end);
         const tokens = selected.split(/[\s,，.。、+\-*＊\/\\|]+/).filter(t => t.trim());
-        const matched = tokens.filter(t => typeof D !== 'undefined' && D[t]);
+        if (!tokens.length) { showToast('未识别有效分类'); return; }
+        // 确保 D 字典已初始化
+        if (typeof D === 'undefined') { showToast('字典未加载，请稍后重试'); return; }
+        const matched = tokens.filter(t => D[t]);
         if (!matched.length) { showToast('未识别有效分类'); return; }
         let sets = matched.map(cat => {
             const nums = keyToAllNums(cat);
@@ -2252,10 +2255,10 @@ window._recognizedTotal = State.recognizedTotal;
         const modal=document.getElementById('configModal');
 
         // 打开配置窗口时自动拍摄快照
-        const originalOpenConfig = function() {
+        document.getElementById('configBtn').addEventListener('click', () => {
             takeConfigSnapshot();
             modal.style.display = 'block';
-        };
+        });
 
         modal.querySelectorAll('.tab').forEach(tab=>{tab.addEventListener('click',function(){const type=this.dataset.tab;if(!type)return;modal.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active');modal.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));document.getElementById(type+'-content').classList.add('active');if(type==='applicant'&&window.renderApplicants)window.renderApplicants();});});
 
@@ -2284,7 +2287,6 @@ window._recognizedTotal = State.recognizedTotal;
                     isConfigDirty = false;
                     configSnapshot = null;
                 } else {
-                    // 不保存，回滚到快照
                     restoreConfigSnapshot();
                 }
             }
@@ -2442,12 +2444,6 @@ window._recognizedTotal = State.recognizedTotal;
 
         document.addEventListener('keydown',e=>{if(e.key==='Delete'&&document.getElementById('applicant-content').classList.contains('active')){if(document.activeElement&&document.activeElement.tagName==='INPUT')return;window.deleteApplicant();}});
         window.renderApplicants();
-
-        // 点击配置按钮打开窗口时拍快照
-        document.getElementById('configBtn').addEventListener('click', () => {
-            takeConfigSnapshot();
-            modal.style.display = 'block';
-        });
     })();
 
 // ===================== 页面渲染函数 =====================
@@ -2993,6 +2989,41 @@ window._recognizedTotal = State.recognizedTotal;
                 <div class="border border-gray-300 bg-white py-1.5 text-center rounded">最大亏损:<span class="num-red">${adjLmStats.maxLoss}</span></div>
                 <div class="border border-gray-300 bg-white py-1.5 text-center rounded">调整后项数:${Object.keys(adjLmMap).length}</div>
             </div></div><div class="bg-white border border-gray-300 rounded shadow-sm p-2 overflow-y-auto text-xs" style="min-height:150px;max-height:300px;">${reportedHTML}</div><div class="grid grid-cols-3 gap-1 text-xs"><button class="border border-gray-300 bg-white py-1.5 hover:bg-gray-50 rounded">打印连码调整</button><button class="border border-gray-300 bg-white py-1.5 hover:bg-gray-50 rounded">清空输出框</button><button class="border border-gray-300 bg-white py-1.5 hover:bg-gray-50 rounded">重置调整</button></div><div class="flex gap-2 mt-1 mb-2"><input type="text" class="flex-1 border border-gray-300 rounded px-2 py-1 text-xs" placeholder="输入调整记录..."><button class="border border-gray-300 px-3 py-1 text-xs rounded hover:bg-gray-50 bg-white">调整记录</button></div></div></div>`;
+    }
+
+    // ===== 无闪烁局部刷新函数（占位，后续实现） =====
+    function refreshOverviewData() { initOverviewCharts(); }
+    function refreshOrderAnalysisData() { renderCharts(); }
+    function refreshSpecialCodeData() { updateSpecialCodeStats(); updateSpecialCodeLeftTable(); }
+    function refreshLianXiaoData() { switchPage('lianXiao'); }
+    function refreshLianMaData() { switchPage('lianMa'); }
+    function refreshOrderDetailData() {
+        if (window._refreshVirtualScroll) window._refreshVirtualScroll();
+        updateOrderGroupCount();
+        const totalEl = document.querySelector('#orderDetailTableWrapper + div span b');
+        if (totalEl) {
+            const filtered = getFilteredOrdersForDetail();
+            const total = filtered.reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
+            totalEl.textContent = formatMoney(total);
+        }
+    }
+    function refreshTodayDrawData() { switchPage('todayDraw'); }
+    function refreshDrawHistoryData() { switchPage('drawHistory'); }
+
+    function getFilteredOrdersForDetail() {
+        const today = State.currentFilterDate;
+        const filterRegion = State.orderDetailFilters.region;
+        const filterBetType = State.orderDetailFilters.betType;
+        const filterWinStatus = State.orderDetailFilters.winStatus;
+        const filterRep = State.orderDetailFilters.reporter;
+        return State.orderList.filter(o => {
+            if (o.date !== today) return false;
+            if (filterRegion !== '不限' && o.region !== filterRegion) return false;
+            if (filterBetType !== '不限' && o.betType !== filterBetType) return false;
+            if (filterWinStatus !== '不限' && o.winStatus !== filterWinStatus) return false;
+            if (filterRep !== '不限' && o.reporter !== filterRep) return false;
+            return true;
+        });
     }
     function renderOrderDetail(){
         setTopBar('');
@@ -4903,13 +4934,123 @@ function updateSpecialCodeStats(){
         span.textContent = '共' + totalGroups + '条';
     }
 
+    // ===== 无闪烁局部刷新函数实现 =====
+    function refreshOverviewData() {
+        initOverviewCharts();
+    }
+
+    function refreshOrderAnalysisData() {
+        renderCharts();
+        const betData = getNumberBetData();
+        const sorted = sortedNumbers().sort((a, b) => (betData[b.num]||0) - (betData[a.num]||0));
+        const { odds, rebate } = getTeMaOddsAndRebate();
+        const totalBet = Object.values(betData).reduce((s,v)=>s+v,0);
+        const tbody = document.querySelector('#mainContent .w-\\[16\\.8rem\\] tbody');
+        if (tbody) {
+            tbody.innerHTML = sorted.map((item,idx)=>{
+                const cc=colorClass(item.color);
+                const bet=betData[item.num]||0;
+                const profit = totalBet - (totalBet * (rebate / 100)) - (bet * odds);
+                return`<tr data-num="${item.num}"><td class="${cc}">${item.num}${item.sheng}</td><td class="${cc} bet-cell">${formatMoney(bet)}</td><td class="${cc} profit-cell">${Math.round(profit)}</td><td class="${cc}">${idx+1}</td></tr>`;
+            }).join('');
+        }
+    }
+
+    function refreshSpecialCodeData() {
+        updateSpecialCodeStats();
+        updateSpecialCodeLeftTable();
+    }
+
+    function refreshLianXiaoData() {
+        switchPage('lianXiao');
+    }
+
+    function refreshLianMaData() {
+        switchPage('lianMa');
+    }
+
+    function refreshOrderDetailData() {
+        const wrapper = document.getElementById('orderDetailTableWrapper');
+        const tbody = document.getElementById('orderDetailTbody');
+        if (window._refreshVirtualScroll && wrapper && tbody) {
+            window._refreshVirtualScroll();
+        } else if (tbody) {
+            const filtered = getFilteredOrdersForDetail();
+            const orderRows = filtered.map((o, idx) => {
+                const rowClass = State.selectedOrderIndices.has(o._realIdx) ? 'selected' : '';
+                const info = o.orderInfo || '';
+                const winDisplay = o.winStatus === '中奖' ? `<span style="color:red;font-weight:bold;">中奖</span>` : (o.winStatus === '未中奖' ? '未中奖' : '未知');
+                const highlightedInfo = highlightOrderInfo(info, o.winStatus, o.betType, null);
+                const winAmountHtml = o.winStatus === '中奖' && o.winAmount ? `<span class="win-amount-red">${formatMoney(parseFloat(o.winAmount))}</span>` : '';
+                return `<tr data-index="${idx}" data-real-index="${o._realIdx}" class="order-row ${rowClass}">
+                    <td>${idx + 1}</td>
+                    <td>${o.region}</td>
+                    <td>${(o.betType || '').trim()}</td>
+                    <td class="order-info-cell" title="${info.replace(/"/g,'&quot;')}">${highlightedInfo}</td>
+                    <td>${o.calcMethod || ''}</td>
+                    <td>${formatMoney(o.amount)}</td>
+                    <td>${formatMoney(o.totalAmount)}</td>
+                    <td>${o.orderSeq || ''}条</td>
+                    <td>${o.reporter || ''}</td>
+                    <td>${winDisplay}</td>
+                    <td>${winAmountHtml}</td>
+                    <td>${o.remark || ''}</td>
+                </tr>`;
+            }).join('');
+            tbody.innerHTML = orderRows;
+        }
+        updateOrderGroupCount();
+        const totalSpan = document.querySelector('#orderDetailTableWrapper + div span b');
+        if (totalSpan) {
+            const filtered = getFilteredOrdersForDetail();
+            const total = filtered.reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
+            totalSpan.textContent = formatMoney(total);
+        }
+    }
+
+    function refreshTodayDrawData() {
+        switchPage('todayDraw');
+    }
+
+    function refreshDrawHistoryData() {
+        switchPage('drawHistory');
+    }
+
     const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     State.filterDuijiangDone = false;
+
+    // ===== 改进的 switchPage：支持无闪烁局部刷新 =====
     function switchPage(pageName){
-        currentPage=pageName;
-        const main=document.getElementById('mainContent');
-        const renderFn=pageRenderers[pageName];
+        const oldPage = currentPage;
+        currentPage = pageName;
+        const main = document.getElementById('mainContent');
+
+        if (oldPage === pageName && oldPage) {
+            const refreshMap = {
+                overview: refreshOverviewData,
+                orderAnalysis: refreshOrderAnalysisData,
+                specialCode: refreshSpecialCodeData,
+                lianXiao: refreshLianXiaoData,
+                lianMa: refreshLianMaData,
+                orderDetail: refreshOrderDetailData,
+                todayDraw: refreshTodayDrawData,
+                drawHistory: refreshDrawHistoryData,
+            };
+            if (refreshMap[pageName]) {
+                refreshMap[pageName]();
+                document.querySelectorAll('.menu-item').forEach(item=>item.classList.remove('active'));
+                document.querySelectorAll('.sub-menu-item').forEach(item=>item.classList.remove('active'));
+                const activeEl=document.querySelector(`[data-page="${pageName}"]`);
+                if(activeEl&&!activeEl.classList.contains('sub-menu-item'))activeEl.classList.add('active');
+                if(['lianXiao','lianMa'].includes(pageName))document.querySelector(`.sub-menu-item[data-page="${pageName}"]`)?.classList.add('active');
+                if(pageName==='specialCode')document.querySelector('[data-page="specialCode"]')?.classList.add('active');
+                updateStoragePanel();
+                return;
+            }
+        }
+
+        const renderFn = pageRenderers[pageName];
         if(renderFn){main.innerHTML=renderFn();main.classList.remove('fade-in');void main.offsetWidth;main.classList.add('fade-in');}
         document.querySelectorAll('.menu-item').forEach(item=>item.classList.remove('active'));
         document.querySelectorAll('.sub-menu-item').forEach(item=>item.classList.remove('active'));
@@ -4919,6 +5060,7 @@ function updateSpecialCodeStats(){
         if(pageName==='specialCode')document.querySelector('[data-page="specialCode"]')?.classList.add('active');
         bindGlobalRegionEvents();
         updateStoragePanel();
+
         if (pageName === 'drawHistory') {
             setTimeout(() => {
                 document.querySelectorAll('input[name="historyRegion"]').forEach(radio => {
@@ -4951,6 +5093,7 @@ function updateSpecialCodeStats(){
                 }
             }, 80);
         }
+
         setTimeout(()=>{
             if(pageName==='overview'){
                 initOverviewCharts();
@@ -5179,6 +5322,7 @@ function updateSpecialCodeStats(){
         });
     }
 
+    // ===== 日期选择器：支持无闪烁局部刷新 =====
     function initDatePicker(){
         const picker=document.getElementById('globalDatePicker');
         if(picker){
@@ -5189,7 +5333,11 @@ function updateSpecialCodeStats(){
             picker.addEventListener('change', () => { 
                 State.currentFilterDate = picker.value; 
                 State.selectedOrderIndices.clear(); 
-                switchPage(currentPage); 
+                if (currentPage && currentPage !== 'addOrder' && currentPage !== 'numberList') {
+                    switchPage(currentPage);
+                } else {
+                    switchPage(currentPage);
+                }
                 updateStoragePanel();
             });
         }
@@ -5311,7 +5459,10 @@ function updateSpecialCodeStats(){
         container.innerHTML = rows.map(row => { const words = row.split(/\s+/).filter(w => w.trim()); return words.map(w => `<span class="quick-tag">${w}</span>`).join(''); }).join('<br>');
     }
 
-    document.getElementById('configBtn').addEventListener('click',()=>{document.getElementById('configModal').style.display='block';});
+    // 配置按钮事件已被 configModal 内部接管，无需重复绑定
+    // document.getElementById('configBtn').addEventListener('click', ...) 已在第三段中处理
+    // 为了兼容，我们仍保留之前的点击隐藏逻辑，但 configModal 内部已覆盖
+
     document.getElementById('configModal').addEventListener('click',function(e){if(e.target===this){this.style.display='none';}});
     document.getElementById('confirmModal').addEventListener('click',function(e){if(e.target===this){this.style.display='none';}});
 
@@ -6214,10 +6365,14 @@ function updateSpecialCodeStats(){
       return null;
     }
 
-    // ===== 识别入口 =====
+    // ===== 识别入口（含替换预设应用） =====
     function performRecognition(text) {
       const resultDiv = document.getElementById('orderResult');
       if (!text || !text.trim()) { if (resultDiv) resultDiv.innerHTML = ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; updateOrderTotalDisplay(); updateMaxLossDisplay(); return; }
+      
+      // 应用替换预设
+      text = applyReplacePresets(text);
+      
       let processedText = preprocess(text);
       const lines = processedText.split('\n');
       const allResults = []; const lineRegions = [];
@@ -6582,10 +6737,24 @@ function updateSpecialCodeStats(){
         clearOrderDraft();
     }
 
+    // ===== 录单输入框行数限制（300行） =====
     function bindOrderEntryRecognition() {
       const textarea = document.getElementById('sourceOrderInput');
       if (!textarea) return;
-      textarea.addEventListener('input', function() { performRecognition(this.value); });
+
+      const MAX_LINES = 300;
+
+      textarea.addEventListener('input', function() {
+        const lines = this.value.split('\n');
+        if (lines.length > MAX_LINES) {
+          const truncated = lines.slice(0, MAX_LINES).join('\n');
+          this.value = truncated;
+          showToast(`文本过长（共${lines.length}行），已自动截断至前${MAX_LINES}行，超出部分已丢弃`);
+          this.setSelectionRange(truncated.length, truncated.length);
+        }
+        performRecognition(this.value);
+      });
+
       const regionRadios = document.querySelectorAll('#orderEntryModal input[name="regionMode"]');
       regionRadios.forEach((radio, index) => {
         radio.addEventListener('change', function() {
