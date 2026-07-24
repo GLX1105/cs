@@ -4934,7 +4934,7 @@ function updateSpecialCodeStats(){
         span.textContent = '共' + totalGroups + '条';
     }
 
-    // ===== 无闪烁局部刷新函数实现 =====
+    // ===== 无闪烁局部刷新函数实现（已完善） =====
     function refreshOverviewData() {
         initOverviewCharts();
     }
@@ -5006,21 +5006,82 @@ function updateSpecialCodeStats(){
             const total = filtered.reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
             totalSpan.textContent = formatMoney(total);
         }
+        // 更新开奖展示区域
+        updateDrawDisplayInOrderDetail();
+        // 更新兑奖结果区域（如果有过滤兑奖过）
+        if (State.filterDuijiangDone) {
+            updateDuijiangResultsInOrderDetail();
+        }
     }
 
     function refreshTodayDrawData() {
+        // 强制完整渲染今日开奖页，确保日期变化后号码更新
         switchPage('todayDraw');
     }
 
     function refreshDrawHistoryData() {
+        // 强制完整渲染开奖历史页，确保地区筛选变化后数据更新
         switchPage('drawHistory');
+    }
+
+    // 订单详情页中更新开奖展示区域的辅助函数
+    function updateDrawDisplayInOrderDetail() {
+        const drawContainer = document.querySelector('#mainContent .flex.justify-around.items-center');
+        if (!drawContainer) return;
+        const areas = ['macau','hongkong','yuegang'];
+        const areaLabels = {macau:'澳门',hongkong:'香港',yuegang:'粤港'};
+        const todayDraw = getCurrentDrawData();
+        let drawHTML = '';
+        areas.forEach((area, idx) => {
+            const data = todayDraw[area] || {nums:[], shengs:[]};
+            let cellsHTML = '';
+            for(let i=0;i<7;i++){
+                const num = data.nums[i] || '';
+                const sheng = data.shengs[i] || '';
+                if (i === 6) {
+                    cellsHTML += `<div class="flex flex-col items-center justify-end" style="width:40px;">
+                        <span style="font-size:20px;font-weight:bold;line-height:40px;">+</span>
+                        <div style="height:28px;"></div>
+                    </div>`;
+                }
+                cellsHTML += `<div class="flex flex-col items-center gap-1">
+                    ${buildBallHTML(num)}
+                    ${buildShengBlock(sheng)}
+                </div>`;
+            }
+            const areaHist = State.historyRecords.filter(r => r.area === areaLabels[area] && r.date === State.currentFilterDate);
+            const latestQihao = areaHist.length ? areaHist[areaHist.length-1].qihao : '';
+            const qihaoShort = latestQihao ? String(latestQihao).slice(-3) + '期' : '';
+            let titleText = areaLabels[area] + '开奖';
+            if (area !== 'hongkong' && qihaoShort) titleText += ' ' + qihaoShort;
+            drawHTML += `<div class="flex flex-col items-center gap-1 px-2">
+                <div class="text-[11px] font-medium text-gray-600">${titleText}</div>
+                <div class="flex justify-center gap-1 flex-wrap items-end">
+                    ${cellsHTML}
+                </div>
+            </div>`;
+            if (idx < areas.length - 1) drawHTML += `<div class="border-l border-gray-300"></div>`;
+        });
+        drawContainer.innerHTML = drawHTML;
+    }
+
+    // 订单详情页中更新兑奖结果区域的辅助函数
+    function updateDuijiangResultsInOrderDetail() {
+        const resultBoxes = document.querySelectorAll('.duijiang-result-box');
+        if (resultBoxes.length !== 4) return;
+        const areas = ['澳门','香港','粤港','all'];
+        areas.forEach((region, index) => {
+            const summary = generateRegionProfitSummary(region, State.orderList);
+            const resultDiv = resultBoxes[index].querySelector('div:last-child');
+            if (resultDiv) resultDiv.innerHTML = summary;
+        });
     }
 
     const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
     let currentPage='overview';
     State.filterDuijiangDone = false;
 
-    // ===== 改进的 switchPage：支持无闪烁局部刷新 =====
+    // ===== 改进的 switchPage：支持无闪烁局部刷新（已完善） =====
     function switchPage(pageName){
         const oldPage = currentPage;
         currentPage = pageName;
@@ -6370,7 +6431,7 @@ function updateSpecialCodeStats(){
       const resultDiv = document.getElementById('orderResult');
       if (!text || !text.trim()) { if (resultDiv) resultDiv.innerHTML = ''; State.pureOrderLines = []; State.pureOrderRegions = []; State.cachedMaxLossData = []; updateOrderTotalDisplay(); updateMaxLossDisplay(); return; }
       
-      // 应用替换预设
+      // ✅ 应用替换预设
       text = applyReplacePresets(text);
       
       let processedText = preprocess(text);
