@@ -558,7 +558,8 @@
     </div>
 </div>
 <script>
-    // ===== 通用区域转换函数 =====
+
+// ===== 通用区域转换函数 =====
 function regionToKey(region) {
     const map = { '澳门': 'macau', '香港': 'hongkong', '粤港': 'yuegang' };
     return map[region] || 'macau';
@@ -994,7 +995,8 @@ window._recognizedTotal = State.recognizedTotal;
             performRecognition(ta.value);
         }
     }
-        // 赔率与返水
+
+// 赔率与返水
     function getTeMaOddsAndRebate() {
         const scheme = window.schemes[State.selectedSchemeIdx];
         if (!scheme) return { odds: 47, rebate: 0 };
@@ -2218,7 +2220,8 @@ window._recognizedTotal = State.recognizedTotal;
             }
         }
     }
-    // ========= 配置弹窗逻辑 =========
+
+// ========= 配置弹窗逻辑 =====
     (function initConfigModal(){
         let isConfigDirty = false;
         let configSnapshot = null; // 打开配置窗口时的数据快照
@@ -2707,7 +2710,8 @@ window._recognizedTotal = State.recognizedTotal;
         }).join('');
         return`<div class="flex gap-3 h-full"><div class="w-[16.8rem] bg-white border border-gray-300 flex-shrink-0 overflow-y-auto rounded shadow-sm"><table><thead class="sticky top-0"><tr><th>号码</th><th>下注数</th><th>盈亏</th><th>ID</th></tr></thead><tbody>${tbodyHTML}</tbody></table></div><div class="flex-1 flex flex-col gap-3 min-w-0"><div class="bg-white border border-gray-300 rounded shadow-sm" style="height:35%; width:85%; margin:0 auto;"><div class="text-center py-2 font-medium text-sm border-b">平特尾押注情况</div><div class="relative px-4 py-2" style="height:calc(100% - 36px);"><div class="absolute left-0 top-2 bottom-6 w-7 flex flex-col justify-between items-end pr-1 text-[10px] text-gray-400" id="weiScaleLabels"><span>12</span><span>8</span><span>4</span><span>0</span></div><div class="h-full flex items-end justify-around border-y border-gray-200 bg-gray-50 chart-grid rounded" id="chartPingTeWei"></div><div class="flex justify-around text-sm font-bold text-gray-700 mt-1" id="weiLabels"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div></div></div><div class="bg-white border border-gray-300 rounded shadow-sm" style="height:35%; width:85%; margin:0 auto;"><div class="text-center py-2 font-medium text-sm border-b">平特一肖押注情况</div><div class="relative px-4 py-2" style="height:calc(100% - 36px);"><div class="absolute left-0 top-2 bottom-6 w-7 flex flex-col justify-between items-end pr-1 text-[10px] text-gray-400" id="xiaoScaleLabels"><span>12</span><span>8</span><span>4</span><span>0</span></div><div class="h-full flex items-end justify-around border-y border-gray-200 bg-gray-50 chart-grid rounded" id="chartPingTeXiao"></div><div class="flex justify-around text-sm font-bold text-gray-700 mt-1" id="xiaoLabels">${shengOrder.map(s=>`<span>${s}</span>`).join('')}</div></div></div><div class="bg-white border border-gray-300 p-3 text-xs rounded shadow-sm" style="margin-top:16px;"><div class="font-medium mb-1.5">订单分析报告（仅参考）：</div><div class="text-gray-600 leading-5 text-[11px]" id="analysisReport"></div></div></div></div>`;
     }
-        function renderSpecialCode(){
+
+function renderSpecialCode(){
         setTopBar(`<label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="globalRegion" value="all" ${State.currentFilterRegion==='all'?'checked':''} class="w-3.5 h-3.5 accent-green-600"><span>全部订单</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="globalRegion" value="macau" ${State.currentFilterRegion==='macau'?'checked':''} class="w-3.5 h-3.5 accent-green-600"><span>只看澳门</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="globalRegion" value="hongkong" ${State.currentFilterRegion==='hongkong'?'checked':''} class="w-3.5 h-3.5 accent-green-600"><span>只看香港</span></label><label class="flex items-center space-x-1.5 cursor-pointer"><input type="radio" name="globalRegion" value="yuegang" ${State.currentFilterRegion==='yuegang'?'checked':''} class="w-3.5 h-3.5 accent-green-600"><span>只看粤港</span></label>`);
         const betData=getNumberBetData();
         const sorted = sortedNumbers().sort((a, b) => {
@@ -3023,7 +3027,8 @@ window._recognizedTotal = State.recognizedTotal;
             return true;
         });
     }
-        function renderOrderDetail(){
+
+function renderOrderDetail(){
         setTopBar('');
         const areas = ['macau','hongkong','yuegang'];
         const areaLabels = {macau:'澳门',hongkong:'香港',yuegang:'粤港'};
@@ -3600,7 +3605,8 @@ window._recognizedTotal = State.recognizedTotal;
             if (skippedAreas.size > 0) { setTimeout(() => showAlert(`以下区域开奖数据不足7个，已跳过：${[...skippedAreas].join('、')}`), 500); }
         } catch (err) { console.error(err); showAlert('兑奖过程中出现错误，请重试'); }
     }
-        function generateDuijiangReport() {
+
+function generateDuijiangReport() {
         const reporterMap = {};
         State.orderList.forEach(o => {
             if (o.date !== State.currentFilterDate) return;
@@ -4388,9 +4394,15 @@ window._recognizedTotal = State.recognizedTotal;
             if (State.historyRegionFilter === 'yuegang') return r.area === '粤港';
             return true;
         });
-        const clearBtnHTML = filtered.length > 0 ? `<button id="clearAllHistoryBtn" class="border border-red-400 text-red-500 px-3 py-1 text-xs rounded hover:bg-red-50">清空全部开奖</button>` : '';
-        if(filtered.length===0) return`<div class="flex flex-col gap-3 h-full"><div class="flex justify-end">${clearBtnHTML}</div><div class="bg-white border border-gray-300 rounded shadow-sm flex-1 overflow-auto flex items-center justify-center text-gray-400">暂无开奖历史</div></div>`;
-        const rows = filtered.map((r, idx) => {
+        // 按日期降序排列，最新在上
+        const sortedFiltered = [...filtered].sort((a, b) => {
+            if (a.date > b.date) return -1;
+            if (a.date < b.date) return 1;
+            return 0;
+        });
+        const clearBtnHTML = sortedFiltered.length > 0 ? `<button id="clearAllHistoryBtn" class="border border-red-400 text-red-500 px-3 py-1 text-xs rounded hover:bg-red-50">清空全部开奖</button>` : '';
+        if(sortedFiltered.length===0) return`<div class="flex flex-col gap-3 h-full"><div class="flex justify-end">${clearBtnHTML}</div><div class="bg-white border border-gray-300 rounded shadow-sm flex-1 overflow-auto flex items-center justify-center text-gray-400">暂无开奖历史</div></div>`;
+        const rows = sortedFiltered.map((r, idx) => {
             const qihaoShort = String(r.qihao).slice(-3) + '期';
             const numList = r.nums.split(',').map(n => n.trim()).filter(n => n);
             const shengList = r.shengs.split(',').map(s => s.trim()).filter(s => s);
@@ -4503,7 +4515,8 @@ window._recognizedTotal = State.recognizedTotal;
         const report=document.getElementById('analysisReport');
         if(report)report.innerHTML=State.orderList.length===0?'暂无订单数据。':`澳门特码胜负差过大，建议降低亏损大的数字的押注数额。`;
     }
-    function updateSpecialCodeStats(){
+
+function updateSpecialCodeStats(){
         const container=document.getElementById('specialCodeStats');
         if(!container)return;
         const betData=getNumberBetData();
@@ -4792,7 +4805,9 @@ window._recognizedTotal = State.recognizedTotal;
             const nums=[],shengs=[];
             const seenNums = new Set();
             let hasDuplicate = false;
-            inputs.forEach(inp=>{const val=inp.value.trim();const padded=val.length===1?'0'+val:val;if (padded && /^\d{2}$/.test(padded)) { if (seenNums.has(padded)) { hasDuplicate = true; } seenNums.add(padded); } nums.push(padded);shengs.push(getShengByNum(val)||'');});
+            let hasAnyNumber = false;
+            inputs.forEach(inp=>{const val=inp.value.trim();const padded=val.length===1?'0'+val:val;if (padded && /^\d{2}$/.test(padded)) { hasAnyNumber = true; if (seenNums.has(padded)) { hasDuplicate = true; } seenNums.add(padded); } nums.push(padded);shengs.push(getShengByNum(val)||'');});
+            if (!hasAnyNumber) { showAlert('请输入开奖号码'); return; }
             if (hasDuplicate) { showAlert('开奖号码不能重复，请检查。'); return; }
             if (!State.drawData[State.currentFilterDate]) State.drawData[State.currentFilterDate] = {macau:{nums:[],shengs:[]},hongkong:{nums:[],shengs:[]},yuegang:{nums:[],shengs:[]}};
             State.drawData[State.currentFilterDate][area]={nums,shengs};
@@ -4902,7 +4917,7 @@ window._recognizedTotal = State.recognizedTotal;
         if (remainingEl) remainingEl.textContent = '--';
     }
 
-    // 计算并更新订单详情页中的“共xx条”
+    // 计算并更新订单详情页中的"共xx条"
     function updateOrderGroupCount() {
         const span = document.getElementById('orderGroupCount');
         if (!span) return;
@@ -4931,146 +4946,109 @@ window._recognizedTotal = State.recognizedTotal;
         span.textContent = '共' + totalGroups + '条';
     }
 
-    // ===== 无闪烁局部刷新函数实现（已完善） =====
+    // ===== 无闪烁局部刷新函数实现（修正） =====
     function refreshOverviewData() {
-        initOverviewCharts();
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                initOverviewCharts();
+            });
+        });
     }
-
-    function refreshOrderAnalysisData() {
-        renderCharts();
-        const betData = getNumberBetData();
-        const sorted = sortedNumbers().sort((a, b) => (betData[b.num]||0) - (betData[a.num]||0));
-        const { odds, rebate } = getTeMaOddsAndRebate();
-        const totalBet = Object.values(betData).reduce((s,v)=>s+v,0);
-        const tbody = document.querySelector('#mainContent .w-\\[16\\.8rem\\] tbody');
-        if (tbody) {
-            tbody.innerHTML = sorted.map((item,idx)=>{
-                const cc=colorClass(item.color);
-                const bet=betData[item.num]||0;
-                const profit = totalBet - (totalBet * (rebate / 100)) - (bet * odds);
-                return`<tr data-num="${item.num}"><td class="${cc}">${item.num}${item.sheng}</td><td class="${cc} bet-cell">${formatMoney(bet)}</td><td class="${cc} profit-cell">${Math.round(profit)}</td><td class="${cc}">${idx+1}</td></tr>`;
-            }).join('');
-        }
-    }
-
-    function refreshSpecialCodeData() {
-        updateSpecialCodeStats();
-        updateSpecialCodeLeftTable();
-    }
-
+    function refreshOrderAnalysisData() { renderCharts(); }
+    function refreshSpecialCodeData() { updateSpecialCodeStats(); updateSpecialCodeLeftTable(); }
+    
     function refreshLianXiaoData() {
-        switchPage('lianXiao');
+        const main = document.getElementById('mainContent');
+        if (!main) return;
+        main.innerHTML = renderLianXiao();
+        bindLianXiaoDeleteBtns();
+        // 重新绑定顶部地区筛选事件（已通过全局处理，无需额外操作）
     }
-
+    
     function refreshLianMaData() {
-        switchPage('lianMa');
+        const main = document.getElementById('mainContent');
+        if (!main) return;
+        main.innerHTML = renderLianMa();
+        bindLianMaDeleteBtns();
     }
-
-    function refreshOrderDetailData() {
-        const wrapper = document.getElementById('orderDetailTableWrapper');
-        const tbody = document.getElementById('orderDetailTbody');
-        if (window._refreshVirtualScroll && wrapper && tbody) {
-            window._refreshVirtualScroll();
-        } else if (tbody) {
-            const filtered = getFilteredOrdersForDetail();
-            const orderRows = filtered.map((o, idx) => {
-                const rowClass = State.selectedOrderIndices.has(o._realIdx) ? 'selected' : '';
-                const info = o.orderInfo || '';
-                const winDisplay = o.winStatus === '中奖' ? `<span style="color:red;font-weight:bold;">中奖</span>` : (o.winStatus === '未中奖' ? '未中奖' : '未知');
-                const highlightedInfo = highlightOrderInfo(info, o.winStatus, o.betType, null);
-                const winAmountHtml = o.winStatus === '中奖' && o.winAmount ? `<span class="win-amount-red">${formatMoney(parseFloat(o.winAmount))}</span>` : '';
-                return `<tr data-index="${idx}" data-real-index="${o._realIdx}" class="order-row ${rowClass}">
-                    <td>${idx + 1}</td>
-                    <td>${o.region}</td>
-                    <td>${(o.betType || '').trim()}</td>
-                    <td class="order-info-cell" title="${info.replace(/"/g,'&quot;')}">${highlightedInfo}</td>
-                    <td>${o.calcMethod || ''}</td>
-                    <td>${formatMoney(o.amount)}</td>
-                    <td>${formatMoney(o.totalAmount)}</td>
-                    <td>${o.orderSeq || ''}条</td>
-                    <td>${o.reporter || ''}</td>
-                    <td>${winDisplay}</td>
-                    <td>${winAmountHtml}</td>
-                    <td>${o.remark || ''}</td>
-                </tr>`;
-            }).join('');
-            tbody.innerHTML = orderRows;
+    
+    function refreshTodayDrawData() {
+        const main = document.getElementById('mainContent');
+        if (!main) return;
+        main.innerHTML = renderTodayDraw();
+        bindDrawInputs();
+        bindTodayDrawControls();
+    }
+    
+    function refreshDrawHistoryData() {
+        const main = document.getElementById('mainContent');
+        if (!main) return;
+        main.innerHTML = renderDrawHistory();
+        // 重新绑定地区筛选事件
+        document.querySelectorAll('input[name="historyRegion"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    State.historyRegionFilter = this.value;
+                    refreshDrawHistoryData(); // 局部刷新
+                }
+            });
+        });
+        // 重新绑定删除和清空按钮事件
+        document.querySelectorAll('.delete-history-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const date = this.getAttribute('data-date');
+                const area = this.getAttribute('data-area');
+                const ok = await showConfirm('确定删除该条开奖记录吗？');
+                if (!ok) return;
+                State.historyRecords = State.historyRecords.filter(r => !(r.date === date && r.area === area));
+                addOperationLog('删除开奖', `删除了${area} ${date} 的开奖记录`);
+                await persistAll();
+                refreshDrawHistoryData(); // 局部刷新
+            });
+        });
+        const clearBtn = document.getElementById('clearAllHistoryBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async function() {
+                const ok = await showConfirm('确定清空全部开奖历史吗？此操作不可恢复。');
+                if (!ok) return;
+                State.historyRecords = [];
+                addOperationLog('清空开奖', '清空了全部开奖历史');
+                await persistAll();
+                refreshDrawHistoryData(); // 局部刷新
+            });
         }
+    }
+    
+    function refreshOperationLogData() {
+        const main = document.getElementById('mainContent');
+        if (!main) return;
+        main.innerHTML = renderOperationLog();
+    }
+    
+    function refreshOrderDetailData() {
+        if (window._refreshVirtualScroll) window._refreshVirtualScroll();
         updateOrderGroupCount();
-        const totalSpan = document.querySelector('#orderDetailTableWrapper + div span b');
-        if (totalSpan) {
+        const totalEl = document.querySelector('#orderDetailTableWrapper + div span b');
+        if (totalEl) {
             const filtered = getFilteredOrdersForDetail();
             const total = filtered.reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
-            totalSpan.textContent = formatMoney(total);
-        }
-        // 更新开奖展示区域
-        updateDrawDisplayInOrderDetail();
-        // 更新兑奖结果区域（如果有过滤兑奖过）
-        if (State.filterDuijiangDone) {
-            updateDuijiangResultsInOrderDetail();
+            totalEl.textContent = formatMoney(total);
         }
     }
 
-    function refreshTodayDrawData() {
-        // 强制完整渲染今日开奖页，确保日期变化后号码更新
-        switchPage('todayDraw');
-    }
-
-    function refreshDrawHistoryData() {
-        // 强制完整渲染开奖历史页，确保地区筛选变化后数据更新
-        switchPage('drawHistory');
-    }
-
-    // 订单详情页中更新开奖展示区域的辅助函数
-    function updateDrawDisplayInOrderDetail() {
-        const drawContainer = document.querySelector('#mainContent .flex.justify-around.items-center');
-        if (!drawContainer) return;
-        const areas = ['macau','hongkong','yuegang'];
-        const areaLabels = {macau:'澳门',hongkong:'香港',yuegang:'粤港'};
-        const todayDraw = getCurrentDrawData();
-        let drawHTML = '';
-        areas.forEach((area, idx) => {
-            const data = todayDraw[area] || {nums:[], shengs:[]};
-            let cellsHTML = '';
-            for(let i=0;i<7;i++){
-                const num = data.nums[i] || '';
-                const sheng = data.shengs[i] || '';
-                if (i === 6) {
-                    cellsHTML += `<div class="flex flex-col items-center justify-end" style="width:40px;">
-                        <span style="font-size:20px;font-weight:bold;line-height:40px;">+</span>
-                        <div style="height:28px;"></div>
-                    </div>`;
-                }
-                cellsHTML += `<div class="flex flex-col items-center gap-1">
-                    ${buildBallHTML(num)}
-                    ${buildShengBlock(sheng)}
-                </div>`;
-            }
-            const areaHist = State.historyRecords.filter(r => r.area === areaLabels[area] && r.date === State.currentFilterDate);
-            const latestQihao = areaHist.length ? areaHist[areaHist.length-1].qihao : '';
-            const qihaoShort = latestQihao ? String(latestQihao).slice(-3) + '期' : '';
-            let titleText = areaLabels[area] + '开奖';
-            if (area !== 'hongkong' && qihaoShort) titleText += ' ' + qihaoShort;
-            drawHTML += `<div class="flex flex-col items-center gap-1 px-2">
-                <div class="text-[11px] font-medium text-gray-600">${titleText}</div>
-                <div class="flex justify-center gap-1 flex-wrap items-end">
-                    ${cellsHTML}
-                </div>
-            </div>`;
-            if (idx < areas.length - 1) drawHTML += `<div class="border-l border-gray-300"></div>`;
-        });
-        drawContainer.innerHTML = drawHTML;
-    }
-
-    // 订单详情页中更新兑奖结果区域的辅助函数
-    function updateDuijiangResultsInOrderDetail() {
-        const resultBoxes = document.querySelectorAll('.duijiang-result-box');
-        if (resultBoxes.length !== 4) return;
-        const areas = ['澳门','香港','粤港','all'];
-        areas.forEach((region, index) => {
-            const summary = generateRegionProfitSummary(region, State.orderList);
-            const resultDiv = resultBoxes[index].querySelector('div:last-child');
-            if (resultDiv) resultDiv.innerHTML = summary;
+    function getFilteredOrdersForDetail() {
+        const today = State.currentFilterDate;
+        const filterRegion = State.orderDetailFilters.region;
+        const filterBetType = State.orderDetailFilters.betType;
+        const filterWinStatus = State.orderDetailFilters.winStatus;
+        const filterRep = State.orderDetailFilters.reporter;
+        return State.orderList.filter(o => {
+            if (o.date !== today) return false;
+            if (filterRegion !== '不限' && o.region !== filterRegion) return false;
+            if (filterBetType !== '不限' && o.betType !== filterBetType) return false;
+            if (filterWinStatus !== '不限' && o.winStatus !== filterWinStatus) return false;
+            if (filterRep !== '不限' && o.reporter !== filterRep) return false;
+            return true;
         });
     }
 
@@ -5078,7 +5056,6 @@ window._recognizedTotal = State.recognizedTotal;
     let currentPage='overview';
     State.filterDuijiangDone = false;
 
-    // ===== 改进的 switchPage：支持无闪烁局部刷新（已完善） =====
     function switchPage(pageName){
         const oldPage = currentPage;
         currentPage = pageName;
@@ -5094,6 +5071,7 @@ window._recognizedTotal = State.recognizedTotal;
                 orderDetail: refreshOrderDetailData,
                 todayDraw: refreshTodayDrawData,
                 drawHistory: refreshDrawHistoryData,
+                operationLog: refreshOperationLogData
             };
             if (refreshMap[pageName]) {
                 refreshMap[pageName]();
@@ -5123,7 +5101,10 @@ window._recognizedTotal = State.recognizedTotal;
             setTimeout(() => {
                 document.querySelectorAll('input[name="historyRegion"]').forEach(radio => {
                     radio.addEventListener('change', function() {
-                        if (this.checked) { State.historyRegionFilter = this.value; switchPage('drawHistory'); }
+                        if (this.checked) {
+                            State.historyRegionFilter = this.value;
+                            refreshDrawHistoryData(); // 使用局部刷新
+                        }
                     });
                 });
                 document.querySelectorAll('.delete-history-btn').forEach(btn => {
@@ -5135,7 +5116,7 @@ window._recognizedTotal = State.recognizedTotal;
                         State.historyRecords = State.historyRecords.filter(r => !(r.date === date && r.area === area));
                         addOperationLog('删除开奖', `删除了${area} ${date} 的开奖记录`);
                         persistAll();
-                        switchPage('drawHistory');
+                        refreshDrawHistoryData(); // 局部刷新
                     });
                 });
                 const clearBtn = document.getElementById('clearAllHistoryBtn');
@@ -5146,7 +5127,7 @@ window._recognizedTotal = State.recognizedTotal;
                         State.historyRecords = [];
                         addOperationLog('清空开奖', '清空了全部开奖历史');
                         persistAll();
-                        switchPage('drawHistory');
+                        refreshDrawHistoryData(); // 局部刷新
                     });
                 }
             }, 80);
@@ -5154,7 +5135,11 @@ window._recognizedTotal = State.recognizedTotal;
 
         setTimeout(()=>{
             if(pageName==='overview'){
-                initOverviewCharts();
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        initOverviewCharts();
+                    });
+                });
             }
             if(pageName==='orderAnalysis')renderCharts();
             if(pageName==='specialCode'){
@@ -5327,7 +5312,7 @@ window._recognizedTotal = State.recognizedTotal;
             }
         }
         persistAll();
-        switchPage('specialCode');
+        refreshSpecialCodeData(); // 局部刷新
     }
 
     function bindLianXiaoDeleteBtns() {
@@ -5348,7 +5333,7 @@ window._recognizedTotal = State.recognizedTotal;
         }
         State.reportedOrdersLianXiao.splice(index, 1);
         persistAll();
-        switchPage('lianXiao');
+        refreshLianXiaoData(); // 局部刷新
     }
 
     function bindLianMaDeleteBtns() {
@@ -5369,7 +5354,7 @@ window._recognizedTotal = State.recognizedTotal;
         }
         State.reportedOrdersLianMa.splice(index, 1);
         persistAll();
-        switchPage('lianMa');
+        refreshLianMaData(); // 局部刷新
     }
 
     function bindGlobalRegionEvents() {
@@ -5400,7 +5385,8 @@ window._recognizedTotal = State.recognizedTotal;
             });
         }
     }
-        function initSidebarToggle() {
+
+function initSidebarToggle() {
         const sidebar = document.getElementById('sidebar');
         const toggleBtn = document.getElementById('toggleSidebarBtn');
         if (!sidebar || !toggleBtn) return;
