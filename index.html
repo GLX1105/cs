@@ -446,7 +446,7 @@
             </div>
             <div class="content" id="applicant-content">
                 <div class="toolbar"><button id="btn-add-applicant">添加申报人</button><button id="btn-delete-applicant">删除申报人</button><input type="text" id="new-applicant-name" placeholder="此处输入要添加的申报人"><button id="btn-move-up">上移</button><button id="btn-move-down">下移</button></div>
-                <div class="applicant-body"><div class="applicant-list"><table><thead><tr><th>申报人</th><th>赔率配置</th></tr></thead><tbody id="applicant-tbody"></tbody></table></div><div class="applicant-note"><strong>说明：</strong><br><br><span class="red">请至少设置一个申报人。</span><br><br>此处设置的申报人仅作用在录单界面。申报人是用于区别订单归属人。<br>赔率配置选项自动关联"赔率/返水"页的方案列表。<br><br>💡 双击名称可编辑；单击行空白区域可选中，选中后点击删除按钮或按Delete键删除。</div></div>
+                <div class="applicant-body"><div class="applicant-list"><table><thead><tr><th>申报人</th><th>赔率配置</th><th>上下家</th></tr></thead><tbody id="applicant-tbody"></tbody></table></div><div class="applicant-note"><strong>说明：</strong><br><br><span class="red">请至少设置一个申报人。</span><br><br>此处设置的申报人仅作用在录单界面。申报人是用于区别订单归属人。<br>赔率配置选项自动关联"赔率/返水"页的方案列表。<br><br>💡 双击名称可编辑；单击行空白区域可选中，选中后点击删除按钮或按Delete键删除。</div></div>
             </div>
         </div>
     </div>
@@ -587,7 +587,7 @@ const State = {
     // 筛选状态
     currentFilterRegion: 'macau',
     currentFilterDate: '',
-    historyRegionFilter: 'all',
+    historyRegionFilter: 'macau',
     orderDetailFilters: {
         region: '不限',
         betType: '不限',
@@ -2398,12 +2398,12 @@ window._recognizedTotal = State.recognizedTotal;
         renderSchemeSelect();renderOddsTable();
         window.applicants=[];window.nextApplicantId=1;window.selectedApplicantId=null;
         const initNames=['张三','01群','02群','03群','04群','05群','06群','07群','08群','09群'];
-        initNames.forEach(name=>{const defaultCfg=window.schemes.length>0?window.schemes[0].name:'47倍计算';window.applicants.push({id:window.nextApplicantId++,name,oddsConfig:defaultCfg});});
+        initNames.forEach(name=>{const defaultCfg=window.schemes.length>0?window.schemes[0].name:'47倍计算';window.applicants.push({id:window.nextApplicantId++,name,oddsConfig:defaultCfg,jiaxiang:'澳门下家'});});
         function getAvailableSchemeNames(){return window.schemes.map(s=>s.name);}
-        window.renderApplicants=function(){const tbody=document.getElementById('applicant-tbody');tbody.innerHTML='';const schemeNames=getAvailableSchemeNames();window.applicants.forEach(a=>{const tr=document.createElement('tr');tr.dataset.id=a.id;if(a.id===window.selectedApplicantId)tr.classList.add('selected');const tdName=document.createElement('td');const span=document.createElement('span');span.className='name-text';span.textContent=a.name||'（空）';const input=document.createElement('input');input.type='text';input.className='name-input';input.value=a.name;span.addEventListener('dblclick',(e)=>{e.stopPropagation();span.classList.add('editing');input.classList.add('editing');input.focus();input.select();});input.addEventListener('blur',()=>{span.classList.remove('editing');input.classList.remove('editing');const val=input.value.trim();if(val&&val!==a.name){if(window.applicants.some(p=>p.id!==a.id&&p.name===val)){showAlert('申报人名称已存在，请使用其他名称。');input.value=a.name;return;}a.name=val;span.textContent=val;isConfigDirty = true;}else{input.value=a.name;}});input.addEventListener('keydown',(e)=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=a.name;input.blur();}});tdName.appendChild(span);tdName.appendChild(input);tr.appendChild(tdName);const tdOdds=document.createElement('td');const sel=document.createElement('select');const optionSet=new Set(schemeNames);if(a.oddsConfig)optionSet.add(a.oddsConfig);const orderedOptions=schemeNames.slice();Array.from(optionSet).forEach(opt=>{if(!orderedOptions.includes(opt))orderedOptions.push(opt);});orderedOptions.forEach(opt=>{const optionEl=document.createElement('option');optionEl.value=opt;optionEl.textContent=opt;if(opt===a.oddsConfig)optionEl.selected=true;sel.appendChild(optionEl);});sel.addEventListener('change',()=>{a.oddsConfig=sel.value;isConfigDirty = true;});tdOdds.appendChild(sel);tr.appendChild(tdOdds);tbody.appendChild(tr);});};
+        window.renderApplicants=function(){const tbody=document.getElementById('applicant-tbody');tbody.innerHTML='';const schemeNames=getAvailableSchemeNames();const jiaxiangOptions = ['澳门下家', '澳门上家', '粤港下家', '粤港上家'];window.applicants.forEach(a=>{const tr=document.createElement('tr');tr.dataset.id=a.id;if(a.id===window.selectedApplicantId)tr.classList.add('selected');const tdName=document.createElement('td');const span=document.createElement('span');span.className='name-text';span.textContent=a.name||'（空）';const input=document.createElement('input');input.type='text';input.className='name-input';input.value=a.name;span.addEventListener('dblclick',(e)=>{e.stopPropagation();span.classList.add('editing');input.classList.add('editing');input.focus();input.select();});input.addEventListener('blur',()=>{span.classList.remove('editing');input.classList.remove('editing');const val=input.value.trim();if(val&&val!==a.name){if(window.applicants.some(p=>p.id!==a.id&&p.name===val)){showAlert('申报人名称已存在，请使用其他名称。');input.value=a.name;return;}a.name=val;span.textContent=val;isConfigDirty = true;}else{input.value=a.name;}});input.addEventListener('keydown',(e)=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=a.name;input.blur();}});tdName.appendChild(span);tdName.appendChild(input);tr.appendChild(tdName);const tdOdds=document.createElement('td');const sel=document.createElement('select');const optionSet=new Set(schemeNames);if(a.oddsConfig)optionSet.add(a.oddsConfig);const orderedOptions=schemeNames.slice();Array.from(optionSet).forEach(opt=>{if(!orderedOptions.includes(opt))orderedOptions.push(opt);});orderedOptions.forEach(opt=>{const optionEl=document.createElement('option');optionEl.value=opt;optionEl.textContent=opt;if(opt===a.oddsConfig)optionEl.selected=true;sel.appendChild(optionEl);});sel.addEventListener('change',()=>{a.oddsConfig=sel.value;isConfigDirty = true;});tdOdds.appendChild(sel);tr.appendChild(tdOdds);const tdJiaxiang = document.createElement('td');const selJiaxiang = document.createElement('select');jiaxiangOptions.forEach(opt => {const optionEl = document.createElement('option');optionEl.value = opt;optionEl.textContent = opt;if (opt === (a.jiaxiang || '澳门下家')) optionEl.selected = true;selJiaxiang.appendChild(optionEl);});selJiaxiang.addEventListener('change', () => {a.jiaxiang = selJiaxiang.value;isConfigDirty = true;});tdJiaxiang.appendChild(selJiaxiang);tr.appendChild(tdJiaxiang);tbody.appendChild(tr);});};
         document.getElementById('applicant-tbody').addEventListener('click',function(e){if(e.target.closest('.name-text')||e.target.closest('.name-input'))return;if(e.target.tagName==='SELECT')return;const tr=e.target.closest('tr');if(!tr)return;const id=parseInt(tr.dataset.id,10);if(isNaN(id))return;if(window.selectedApplicantId===id){window.selectedApplicantId=null;}else{window.selectedApplicantId=id;}window.renderApplicants();});
         window.deleteApplicant=async function(){if(window.selectedApplicantId===null)return showAlert('请先单击选中一个申报人行（蓝色高亮）。');const applicant=window.applicants.find(a=>a.id===window.selectedApplicantId);if(!applicant){window.selectedApplicantId=null;window.renderApplicants();return;}const ok=await showConfirm(`确定删除申报人"${applicant.name}"吗？`);if(!ok)return;window.applicants=window.applicants.filter(a=>a.id!==window.selectedApplicantId);window.selectedApplicantId=null;window.renderApplicants();isConfigDirty = true;};
-        document.getElementById('btn-add-applicant').addEventListener('click',()=>{const input=document.getElementById('new-applicant-name');const name=input.value.trim();if(!name)return showAlert('请输入申报人名称。');if(window.applicants.some(a=>a.name===name)){showAlert('申报人名称已存在，请使用其他名称。');return;}const defaultConfig=window.schemes.length>0?window.schemes[0].name:'47倍计算';window.applicants.push({id:window.nextApplicantId++,name,oddsConfig:defaultConfig});input.value='';window.selectedApplicantId=null;window.renderApplicants();isConfigDirty = true;});
+        document.getElementById('btn-add-applicant').addEventListener('click',()=>{const input=document.getElementById('new-applicant-name');const name=input.value.trim();if(!name)return showAlert('请输入申报人名称。');if(window.applicants.some(a=>a.name===name)){showAlert('申报人名称已存在，请使用其他名称。');return;}const defaultConfig=window.schemes.length>0?window.schemes[0].name:'47倍计算';window.applicants.push({id:window.nextApplicantId++,name,oddsConfig:defaultConfig,jiaxiang:'澳门下家'});input.value='';window.selectedApplicantId=null;window.renderApplicants();isConfigDirty = true;});
         document.getElementById('new-applicant-name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btn-add-applicant').click();});
         document.getElementById('btn-delete-applicant').addEventListener('click',()=>window.deleteApplicant());
 
@@ -3646,6 +3646,15 @@ function generateDuijiangReport() {
             const detailStr = detailParts.join('+') + '=' + formatMoney(totalAmount) + ' (共计' + seqs.length + '条)';
 
             const applicant = (window.applicants || []).find(a => a.name === reporter);
+            const jiaxiang = applicant ? (applicant.jiaxiang || '澳门下家') : '未知';
+            const jiaxiangColorMap = {
+                '澳门下家': '#e74c3c',
+                '澳门上家': '#3498db',
+                '粤港下家': '#27ae60',
+                '粤港上家': '#e67e22'
+            };
+            const jiaxiangColor = jiaxiangColorMap[jiaxiang] || '#888888';
+
             let reporterSchemeName = applicant ? applicant.oddsConfig : (window.schemes[State.selectedSchemeIdx] ? window.schemes[State.selectedSchemeIdx].name : '47倍计算');
             const reporterScheme = (window.schemes || []).find(s => s.name === reporterSchemeName) || window.schemes[0];
             let rebatePercent = 0;
@@ -3709,6 +3718,7 @@ function generateDuijiangReport() {
             const profitColor = profitInt >= 0 ? '#059669' : '#dc2626';
             const profitStr = '<span style="color:' + profitColor + ';">' + profitInt + '</span>';
 
+            html += '<span style="color:' + jiaxiangColor + ';">' + jiaxiang + '</span><br>';
             html += '申报人：' + reporter + '<br>';
             html += '订单金额明细：' + detailStr + '<br>';
             html += '订单总额：' + formatMoney(totalAmount) + '<br>';
@@ -4962,7 +4972,7 @@ function updateSpecialCodeStats(){
         if (!main) return;
         main.innerHTML = renderLianXiao();
         bindLianXiaoDeleteBtns();
-        bindGlobalRegionEvents();   // ✅ 新增：重新绑定地区筛选
+        bindGlobalRegionEvents();   // 重新绑定地区筛选
     }
     
     function refreshLianMaData() {
@@ -4970,7 +4980,7 @@ function updateSpecialCodeStats(){
         if (!main) return;
         main.innerHTML = renderLianMa();
         bindLianMaDeleteBtns();
-        bindGlobalRegionEvents();   // ✅ 新增
+        bindGlobalRegionEvents();
     }
     
     function refreshTodayDrawData() {
@@ -4979,7 +4989,7 @@ function updateSpecialCodeStats(){
         main.innerHTML = renderTodayDraw();
         bindDrawInputs();
         bindTodayDrawControls();
-        bindGlobalRegionEvents();   // ✅ 新增
+        bindGlobalRegionEvents();
     }
     
     function refreshDrawHistoryData() {
@@ -5005,7 +5015,7 @@ function updateSpecialCodeStats(){
                 State.historyRecords = State.historyRecords.filter(r => !(r.date === date && r.area === area));
                 addOperationLog('删除开奖', `删除了${area} ${date} 的开奖记录`);
                 await persistAll();
-                refreshDrawHistoryData(); // 局部刷新
+                refreshDrawHistoryData();
             });
         });
         const clearBtn = document.getElementById('clearAllHistoryBtn');
@@ -5016,7 +5026,7 @@ function updateSpecialCodeStats(){
                 State.historyRecords = [];
                 addOperationLog('清空开奖', '清空了全部开奖历史');
                 await persistAll();
-                refreshDrawHistoryData(); // 局部刷新
+                refreshDrawHistoryData();
             });
         }
     }
@@ -5025,12 +5035,23 @@ function updateSpecialCodeStats(){
         const main = document.getElementById('mainContent');
         if (!main) return;
         main.innerHTML = renderOperationLog();
-        bindGlobalRegionEvents();   // ✅ 新增
+        bindGlobalRegionEvents();
     }
     
     function refreshOrderDetailData() {
         if (window._refreshVirtualScroll) window._refreshVirtualScroll();
         updateOrderGroupCount();
+        // 更新四个兑奖结果框
+        if (State.filterDuijiangDone) {
+            const macauDiv = document.querySelector('.duijiang-result-box:nth-child(1) div:last-child');
+            const hkDiv = document.querySelector('.duijiang-result-box:nth-child(2) div:last-child');
+            const ygDiv = document.querySelector('.duijiang-result-box:nth-child(3) div:last-child');
+            const allDiv = document.querySelector('.duijiang-result-box:nth-child(4) div:last-child');
+            if (macauDiv) macauDiv.innerHTML = generateRegionProfitSummary('澳门', State.orderList);
+            if (hkDiv) hkDiv.innerHTML = generateRegionProfitSummary('香港', State.orderList);
+            if (ygDiv) ygDiv.innerHTML = generateRegionProfitSummary('粤港', State.orderList);
+            if (allDiv) allDiv.innerHTML = generateRegionProfitSummary('all', State.orderList);
+        }
         const totalEl = document.querySelector('#orderDetailTableWrapper + div span b');
         if (totalEl) {
             const filtered = getFilteredOrdersForDetail();
@@ -5056,7 +5077,7 @@ function updateSpecialCodeStats(){
     }
 
     const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
-    let currentPage = null;   // ✅ 修改：初始值为 null，确保首次进入走完整渲染流程
+    let currentPage = null;
     State.filterDuijiangDone = false;
 
     function switchPage(pageName){
@@ -5106,7 +5127,7 @@ function updateSpecialCodeStats(){
                     radio.addEventListener('change', function() {
                         if (this.checked) {
                             State.historyRegionFilter = this.value;
-                            refreshDrawHistoryData(); // 使用局部刷新
+                            refreshDrawHistoryData();
                         }
                     });
                 });
@@ -5119,7 +5140,7 @@ function updateSpecialCodeStats(){
                         State.historyRecords = State.historyRecords.filter(r => !(r.date === date && r.area === area));
                         addOperationLog('删除开奖', `删除了${area} ${date} 的开奖记录`);
                         persistAll();
-                        refreshDrawHistoryData(); // 局部刷新
+                        refreshDrawHistoryData();
                     });
                 });
                 const clearBtn = document.getElementById('clearAllHistoryBtn');
@@ -5130,7 +5151,7 @@ function updateSpecialCodeStats(){
                         State.historyRecords = [];
                         addOperationLog('清空开奖', '清空了全部开奖历史');
                         persistAll();
-                        refreshDrawHistoryData(); // 局部刷新
+                        refreshDrawHistoryData();
                     });
                 }
             }, 80);
@@ -5315,7 +5336,7 @@ function updateSpecialCodeStats(){
             }
         }
         persistAll();
-        refreshSpecialCodeData(); // 局部刷新
+        refreshSpecialCodeData();
     }
 
     function bindLianXiaoDeleteBtns() {
@@ -5336,7 +5357,7 @@ function updateSpecialCodeStats(){
         }
         State.reportedOrdersLianXiao.splice(index, 1);
         persistAll();
-        refreshLianXiaoData(); // 局部刷新
+        refreshLianXiaoData();
     }
 
     function bindLianMaDeleteBtns() {
@@ -5357,7 +5378,7 @@ function updateSpecialCodeStats(){
         }
         State.reportedOrdersLianMa.splice(index, 1);
         persistAll();
-        refreshLianMaData(); // 局部刷新
+        refreshLianMaData();
     }
 
     function bindGlobalRegionEvents() {
@@ -5389,7 +5410,7 @@ function updateSpecialCodeStats(){
         }
     }
 
-function initSidebarToggle() {
+    function initSidebarToggle() {
         const sidebar = document.getElementById('sidebar');
         const toggleBtn = document.getElementById('toggleSidebarBtn');
         if (!sidebar || !toggleBtn) return;
