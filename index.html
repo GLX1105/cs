@@ -4962,7 +4962,7 @@ function updateSpecialCodeStats(){
         if (!main) return;
         main.innerHTML = renderLianXiao();
         bindLianXiaoDeleteBtns();
-        // 重新绑定顶部地区筛选事件（已通过全局处理，无需额外操作）
+        bindGlobalRegionEvents();   // ✅ 新增：重新绑定地区筛选
     }
     
     function refreshLianMaData() {
@@ -4970,6 +4970,7 @@ function updateSpecialCodeStats(){
         if (!main) return;
         main.innerHTML = renderLianMa();
         bindLianMaDeleteBtns();
+        bindGlobalRegionEvents();   // ✅ 新增
     }
     
     function refreshTodayDrawData() {
@@ -4978,13 +4979,14 @@ function updateSpecialCodeStats(){
         main.innerHTML = renderTodayDraw();
         bindDrawInputs();
         bindTodayDrawControls();
+        bindGlobalRegionEvents();   // ✅ 新增
     }
     
     function refreshDrawHistoryData() {
         const main = document.getElementById('mainContent');
         if (!main) return;
         main.innerHTML = renderDrawHistory();
-        // 重新绑定地区筛选事件
+        // 重新绑定地区筛选事件（historyRegion）
         document.querySelectorAll('input[name="historyRegion"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.checked) {
@@ -5023,6 +5025,7 @@ function updateSpecialCodeStats(){
         const main = document.getElementById('mainContent');
         if (!main) return;
         main.innerHTML = renderOperationLog();
+        bindGlobalRegionEvents();   // ✅ 新增
     }
     
     function refreshOrderDetailData() {
@@ -5053,7 +5056,7 @@ function updateSpecialCodeStats(){
     }
 
     const pageRenderers={overview:renderOverview,orderAnalysis:renderOrderAnalysis,specialCode:renderSpecialCode,lianXiao:renderLianXiao,lianMa:renderLianMa,orderDetail:renderOrderDetail,todayDraw:renderTodayDraw,drawHistory:renderDrawHistory,tools:renderTools,operationLog:renderOperationLog,numberList:renderNumberList};
-    let currentPage='overview';
+    let currentPage = null;   // ✅ 修改：初始值为 null，确保首次进入走完整渲染流程
     State.filterDuijiangDone = false;
 
     function switchPage(pageName){
