@@ -938,7 +938,7 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（完全用数学计算索引，不依赖元素位置） ==========
+// ========== 录单表格拖选（完全用数学计算索引，已修复第二次点击异常全选） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
@@ -1028,6 +1028,7 @@ function initEntryTableDragSelect() {
 
     const onMouseUp = () => {
         isDragging = false; endIndex = -1;
+        startIndex = -1;  // 重置起始索引
         stopAutoScroll();
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
@@ -1046,7 +1047,7 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（完全用数学计算索引，绕过虚拟滚动） ==========
+// ========== 订单详情拖选（完全用数学计算索引，已修复第二次点击异常全选） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
@@ -1054,7 +1055,7 @@ function initOrderDetailDragSelect(tbody) {
     let autoScrollTimer = null;
     let pendingUpdate = false;
     let lastMouseX = 0, lastMouseY = 0;
-    const ROW_HEIGHT = 28; // 订单详情表格固定行高
+    const ROW_HEIGHT = 28;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1070,7 +1071,6 @@ function initOrderDetailDragSelect(tbody) {
         return wrapper ? wrapper.getBoundingClientRect().top : 0;
     }
 
-    // 根据鼠标 Y 坐标计算 realIndex（实际数据索引）
     function getRealIndexFromY(clientY) {
         const tableTop = getTableTop();
         const scrollTop = getScrollTop();
@@ -1080,13 +1080,9 @@ function initOrderDetailDragSelect(tbody) {
         if (rows.length === 0) return -1;
         const firstRealIndex = parseInt(rows[0].dataset.realIndex);
         if (isNaN(firstRealIndex)) return -1;
-        // 虚拟滚动中，数据索引可能不连续，但我们可以通过第一个行的 realIndex 加上偏移来估算。
-        // 为了更精确，我们可以遍历已渲染的行找到最接近的行索引。
-        // 简单起见，直接用偏移量计算，并限制在已知的数据范围内（取最大 realIndex 为 lastRow 的 realIndex）
         const lastRealIndex = parseInt(rows[rows.length-1].dataset.realIndex);
         if (isNaN(lastRealIndex)) return firstRealIndex + rowIndex;
         const estimatedIdx = firstRealIndex + rowIndex;
-        // 如果估算的索引超出了当前渲染范围，则返回边界索引，确保选中
         return Math.min(estimatedIdx, lastRealIndex);
     }
 
@@ -1098,7 +1094,6 @@ function initOrderDetailDragSelect(tbody) {
         const min = Math.min(startRealIdx, endRealIdx);
         const max = Math.max(startRealIdx, endRealIdx);
         State.selectedOrderIndices.clear();
-        // 直接按数字范围选中 realIndex
         for (let i = min; i <= max; i++) State.selectedOrderIndices.add(i);
         scheduleUpdate();
     }
@@ -1176,6 +1171,7 @@ function initOrderDetailDragSelect(tbody) {
         const onMouseUp = () => {
             isDragging = false;
             endRealIdx = -1;
+            startRealIdx = -1;  // 重置起始索引
             stopAutoScroll();
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
@@ -1472,6 +1468,7 @@ function bindSpecialCodeDragSelect() {
     const onMouseUp = () => {
         isDragging = false;
         endNum = null;
+        startNum = null;  // 重置起始号码
         stopAutoScroll();
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
