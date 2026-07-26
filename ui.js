@@ -938,7 +938,7 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（修复：自动滚动期间禁止 onMouseMove 更新选区） ==========
+// ========== 录单表格拖选（修复：自动滚动期间禁止 onMouseMove 更新选区，且 stopAutoScroll 不重置标志） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
@@ -949,7 +949,7 @@ function initEntryTableDragSelect() {
 
     function stopAutoScroll() {
         if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
-        autoScrolling = false;
+        // 不再这里设置 autoScrolling = false，由调用方显式控制
     }
 
     function getFirstRow() {
@@ -1014,33 +1014,36 @@ function initEntryTableDragSelect() {
         const topThreshold = rect.top + 30;
         const bottomThreshold = rect.bottom - 30;
 
-        // 根据鼠标位置启动/停止自动滚动
         if (e.clientY < topThreshold) {
             if (!autoScrolling) {
                 autoScrolling = true;
-                stopAutoScroll(); // 清除可能存在的定时器
+                // 直接启动定时器，不调用 stopAutoScroll，避免重置标志
+                if (autoScrollInterval) clearInterval(autoScrollInterval);
                 autoScrollInterval = setInterval(() => {
                     wrapper.scrollTop -= 15;
                     const tr = getFirstRow();
                     if (tr) expandSelectionToRow(tr);
                 }, 30);
             }
+            // 自动滚动期间，onMouseMove 不更新选区，只保持定时器运行
+            return;
         } else if (e.clientY > bottomThreshold) {
             if (!autoScrolling) {
                 autoScrolling = true;
-                stopAutoScroll();
+                if (autoScrollInterval) clearInterval(autoScrollInterval);
                 autoScrollInterval = setInterval(() => {
                     wrapper.scrollTop += 15;
                     const tr = getLastRow();
                     if (tr) expandSelectionToRow(tr);
                 }, 30);
             }
+            return;
         } else {
-            // 鼠标回到表格内部，停止自动滚动
+            // 鼠标回到表格内部，停止自动滚动，并允许手动更新
             if (autoScrolling) {
+                autoScrolling = false;
                 stopAutoScroll();
             }
-            // 正常更新鼠标下的行
             let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
             if (!tr) {
                 if (e.clientY < rect.top) tr = getFirstRow();
@@ -1053,6 +1056,7 @@ function initEntryTableDragSelect() {
     const onMouseUp = () => {
         isDragging = false;
         endIndex = -1;
+        autoScrolling = false;
         stopAutoScroll();
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
@@ -1071,14 +1075,14 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（修复：自动滚动期间禁止 onMouseMove 更新选区） ==========
+// ========== 订单详情拖选（修复：自动滚动期间禁止 onMouseMove 更新选区，且 stopAutoScroll 不重置标志） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
-    let autoScrolling = false;   // 标志：是否处于自动滚动中
+    let autoScrolling = false;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1099,7 +1103,7 @@ function initOrderDetailDragSelect(tbody) {
             clearInterval(autoScrollTimer);
             autoScrollTimer = null;
         }
-        autoScrolling = false;
+        // 不在这里改 autoScrolling
     }
 
     function scheduleUpdate() {
@@ -1174,33 +1178,33 @@ function initOrderDetailDragSelect(tbody) {
             const rect = wrapper.getBoundingClientRect();
             const threshold = 35;
 
-            // 根据鼠标位置启动/停止自动滚动
             if (e.clientY < rect.top + threshold) {
                 if (!autoScrolling) {
                     autoScrolling = true;
-                    stopAutoScroll();
+                    if (autoScrollTimer) clearInterval(autoScrollTimer);
                     autoScrollTimer = setInterval(() => {
                         wrapper.scrollTop -= 12;
                         const tr = getFirstRow();
                         if (tr) expandSelectionToRow(tr);
                     }, 25);
                 }
+                return;
             } else if (e.clientY > rect.bottom - threshold) {
                 if (!autoScrolling) {
                     autoScrolling = true;
-                    stopAutoScroll();
+                    if (autoScrollTimer) clearInterval(autoScrollTimer);
                     autoScrollTimer = setInterval(() => {
                         wrapper.scrollTop += 12;
                         const tr = getLastRow();
                         if (tr) expandSelectionToRow(tr);
                     }, 25);
                 }
+                return;
             } else {
-                // 鼠标回到表格内部，停止自动滚动
                 if (autoScrolling) {
+                    autoScrolling = false;
                     stopAutoScroll();
                 }
-                // 正常更新当前鼠标下的行
                 let targetTr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
                 if (!targetTr) {
                     if (e.clientY < rect.top) targetTr = getFirstRow();
@@ -1213,6 +1217,7 @@ function initOrderDetailDragSelect(tbody) {
         const onMouseUp = () => {
             isDragging = false;
             endRealIdx = -1;
+            autoScrolling = false;
             stopAutoScroll();
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
