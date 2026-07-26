@@ -938,88 +938,29 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（修复：自动滚动时实时更新选区） ==========
+// ========== 录单表格拖选 ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
-    let lastMouseX = 0, lastMouseY = 0;
-
-    function startAutoScroll(e) {
-        if (!wrapper) return;
-        const rect = wrapper.getBoundingClientRect();
-        const mouseY = e.clientY;
-        const topThreshold = rect.top + 30;
-        const bottomThreshold = rect.bottom - 30;
-        if (autoScrollInterval) return;
-        if (mouseY < topThreshold) {
-            autoScrollInterval = setInterval(() => {
-                wrapper.scrollTop -= 15;
-                // 实时获取当前鼠标下的行并更新选区
-                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
-                if (tr) {
-                    const idx = parseInt(tr.dataset.index);
-                    if (idx !== endIndex) {
-                        endIndex = idx;
-                        const min = Math.min(startIndex, endIndex), max = Math.max(startIndex, endIndex);
-                        State.entrySelectedIndices.clear();
-                        for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
-                        updateEntryRowSelection();
-                    }
-                }
-            }, 30);
-        } else if (mouseY > bottomThreshold) {
-            autoScrollInterval = setInterval(() => {
-                wrapper.scrollTop += 15;
-                // 实时获取当前鼠标下的行并更新选区
-                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
-                if (tr) {
-                    const idx = parseInt(tr.dataset.index);
-                    if (idx !== endIndex) {
-                        endIndex = idx;
-                        const min = Math.min(startIndex, endIndex), max = Math.max(startIndex, endIndex);
-                        State.entrySelectedIndices.clear();
-                        for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
-                        updateEntryRowSelection();
-                    }
-                }
-            }, 30);
-        }
-    }
 
     function stopAutoScroll() {
         if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
     }
 
-    tbody.addEventListener('mousedown', (e) => {
-        if (e.button === 2) return;
-        const tr = e.target.closest('tr.order-row');
-        if (!tr) return;
-        if (e.target.closest('input') || e.target.closest('select') || e.target.closest('.custom-select-wrapper')) return;
-        const idx = parseInt(tr.dataset.index);
-        if (e.ctrlKey || e.metaKey) { if (State.entrySelectedIndices.has(idx)) State.entrySelectedIndices.delete(idx); else State.entrySelectedIndices.add(idx); updateEntryRowSelection(); return; }
-        if (e.shiftKey && startIndex !== -1) { const min = Math.min(startIndex, idx), max = Math.max(startIndex, idx); State.entrySelectedIndices.clear(); for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i); endIndex = idx; updateEntryRowSelection(); return; }
-        isDragging = true; startIndex = idx; State.entrySelectedIndices.clear(); State.entrySelectedIndices.add(idx); updateEntryRowSelection();
-        document.addEventListener('mouseup', onMouseUp); document.addEventListener('mousemove', onMouseMove);
-    });
+    function getFirstRow() {
+        const rows = tbody.querySelectorAll('tr.order-row');
+        return rows.length > 0 ? rows[0] : null;
+    }
 
-    const onMouseMove = (e) => {
-        if (!isDragging) return;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
-        startAutoScroll(e);
-        let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
-        if (!tr && wrapper) {
-            const wrapperRect = wrapper.getBoundingClientRect();
-            if (e.clientY > wrapperRect.bottom && e.clientY < wrapperRect.bottom + 30) {
-                const rows = tbody.querySelectorAll('tr.order-row');
-                if (rows.length > 0) {
-                    tr = rows[rows.length - 1];
-                }
-            }
-        }
+    function getLastRow() {
+        const rows = tbody.querySelectorAll('tr.order-row');
+        return rows.length > 0 ? rows[rows.length - 1] : null;
+    }
+
+    function updateSelectionToRow(tr) {
         if (!tr) return;
         const idx = parseInt(tr.dataset.index);
         if (idx === endIndex) return;
@@ -1028,10 +969,83 @@ function initEntryTableDragSelect() {
         State.entrySelectedIndices.clear();
         for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
         updateEntryRowSelection();
+    }
+
+    tbody.addEventListener('mousedown', (e) => {
+        if (e.button === 2) return;
+        const tr = e.target.closest('tr.order-row');
+        if (!tr) return;
+        if (e.target.closest('input') || e.target.closest('select') || e.target.closest('.custom-select-wrapper')) return;
+        const idx = parseInt(tr.dataset.index);
+        if (e.ctrlKey || e.metaKey) {
+            if (State.entrySelectedIndices.has(idx)) State.entrySelectedIndices.delete(idx);
+            else State.entrySelectedIndices.add(idx);
+            updateEntryRowSelection();
+            return;
+        }
+        if (e.shiftKey && startIndex !== -1) {
+            const min = Math.min(startIndex, idx), max = Math.max(startIndex, idx);
+            State.entrySelectedIndices.clear();
+            for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
+            endIndex = idx;
+            updateEntryRowSelection();
+            return;
+        }
+        isDragging = true;
+        startIndex = idx;
+        State.entrySelectedIndices.clear();
+        State.entrySelectedIndices.add(idx);
+        updateEntryRowSelection();
+        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('mousemove', onMouseMove);
+    });
+
+    const onMouseMove = (e) => {
+        if (!isDragging) return;
+
+        if (!wrapper) return;
+        const rect = wrapper.getBoundingClientRect();
+        const topThreshold = rect.top + 30;
+        const bottomThreshold = rect.bottom - 30;
+
+        // 先处理自动滚动
+        if (e.clientY < topThreshold) {
+            if (!autoScrollInterval) {
+                autoScrollInterval = setInterval(() => {
+                    wrapper.scrollTop -= 15;
+                    // 持续将第一行纳入选区
+                    const first = getFirstRow();
+                    if (first) updateSelectionToRow(first);
+                }, 30);
+            }
+        } else if (e.clientY > bottomThreshold) {
+            if (!autoScrollInterval) {
+                autoScrollInterval = setInterval(() => {
+                    wrapper.scrollTop += 15;
+                    // 持续将最后一行纳入选区
+                    const last = getLastRow();
+                    if (last) updateSelectionToRow(last);
+                }, 30);
+            }
+        } else {
+            stopAutoScroll();
+        }
+
+        // 处理当前鼠标下的行
+        let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
+        if (!tr) {
+            if (e.clientY < rect.top) {
+                tr = getFirstRow();
+            } else if (e.clientY > rect.bottom) {
+                tr = getLastRow();
+            }
+        }
+        if (tr) updateSelectionToRow(tr);
     };
 
     const onMouseUp = () => {
-        isDragging = false; endIndex = -1;
+        isDragging = false;
+        endIndex = -1;
         stopAutoScroll();
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
@@ -1050,84 +1064,26 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（修复：自动滚动时实时更新选区） ==========
+// ========== 订单详情拖选 ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
-    let reachedBottom = false;
-    let lastMouseX = 0, lastMouseY = 0;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
     }
 
-    function getLastRowIndex() {
+    function getFirstRow() {
         const rows = tbody.querySelectorAll('tr.order-row');
-        if (!rows.length) return -1;
-        return parseInt(rows[rows.length - 1].dataset.realIndex);
+        return rows.length > 0 ? rows[0] : null;
     }
 
-    function startAutoScroll(e) {
-        const wrapper = getWrapper();
-        if (!wrapper) return;
-        const rect = wrapper.getBoundingClientRect();
-        const mouseY = e.clientY;
-        const threshold = 35;
-
-        stopAutoScroll();
-
-        if (mouseY < rect.top + threshold) {
-            autoScrollTimer = setInterval(() => {
-                wrapper.scrollTop -= 12;
-                // 实时获取当前鼠标下的行并更新选区
-                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
-                if (tr) {
-                    const realIdx = parseInt(tr.dataset.realIndex);
-                    if (realIdx !== endRealIdx) {
-                        endRealIdx = realIdx;
-                        const min = Math.min(startRealIdx, endRealIdx);
-                        const max = Math.max(startRealIdx, endRealIdx);
-                        State.selectedOrderIndices.clear();
-                        const rows = tbody.querySelectorAll('tr.order-row');
-                        let inRange = false;
-                        rows.forEach(r => {
-                            const idx = parseInt(r.dataset.realIndex);
-                            if (idx === min) inRange = true;
-                            if (inRange) State.selectedOrderIndices.add(idx);
-                            if (idx === max) inRange = false;
-                        });
-                        scheduleUpdate();
-                    }
-                }
-            }, 25);
-        } else if (mouseY > rect.bottom - threshold) {
-            autoScrollTimer = setInterval(() => {
-                wrapper.scrollTop += 12;
-                // 实时获取当前鼠标下的行并更新选区
-                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
-                if (tr) {
-                    const realIdx = parseInt(tr.dataset.realIndex);
-                    if (realIdx !== endRealIdx) {
-                        endRealIdx = realIdx;
-                        const min = Math.min(startRealIdx, endRealIdx);
-                        const max = Math.max(startRealIdx, endRealIdx);
-                        State.selectedOrderIndices.clear();
-                        const rows = tbody.querySelectorAll('tr.order-row');
-                        let inRange = false;
-                        rows.forEach(r => {
-                            const idx = parseInt(r.dataset.realIndex);
-                            if (idx === min) inRange = true;
-                            if (inRange) State.selectedOrderIndices.add(idx);
-                            if (idx === max) inRange = false;
-                        });
-                        scheduleUpdate();
-                    }
-                }
-            }, 25);
-        }
+    function getLastRow() {
+        const rows = tbody.querySelectorAll('tr.order-row');
+        return rows.length > 0 ? rows[rows.length - 1] : null;
     }
 
     function stopAutoScroll() {
@@ -1145,6 +1101,25 @@ function initOrderDetailDragSelect(tbody) {
                 pendingUpdate = false;
             });
         }
+    }
+
+    function updateSelectionToRow(tr) {
+        if (!tr) return;
+        const realIdx = parseInt(tr.dataset.realIndex);
+        if (realIdx === endRealIdx) return;
+        endRealIdx = realIdx;
+        const min = Math.min(startRealIdx, endRealIdx);
+        const max = Math.max(startRealIdx, endRealIdx);
+        State.selectedOrderIndices.clear();
+        const rows = tbody.querySelectorAll('tr.order-row');
+        let inRange = false;
+        rows.forEach(r => {
+            const idx = parseInt(r.dataset.realIndex);
+            if (idx === min) inRange = true;
+            if (inRange) State.selectedOrderIndices.add(idx);
+            if (idx === max) inRange = false;
+        });
+        scheduleUpdate();
     }
 
     tbody.addEventListener('mousedown', (e) => {
@@ -1168,7 +1143,6 @@ function initOrderDetailDragSelect(tbody) {
                 if (idx === max) started = false;
             });
             endRealIdx = realIdx;
-            reachedBottom = false;
             updateRowSelection();
             return;
         }
@@ -1177,57 +1151,52 @@ function initOrderDetailDragSelect(tbody) {
         startRealIdx = realIdx;
         State.selectedOrderIndices.clear();
         State.selectedOrderIndices.add(realIdx);
-        reachedBottom = false;
         updateRowSelection();
 
         const onMouseMove = (e) => {
             if (!isDragging) return;
 
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-            startAutoScroll(e);
+            const wrapper = getWrapper();
+            if (!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            const threshold = 35;
 
-            let targetIdx;
-            const tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
-            if (tr) {
-                targetIdx = parseInt(tr.dataset.realIndex);
-                reachedBottom = false;
-            } else {
-                const wrapper = getWrapper();
-                if (wrapper && e.clientY > wrapper.getBoundingClientRect().bottom) {
-                    if (reachedBottom) {
-                        return;
-                    }
-                    targetIdx = getLastRowIndex();
-                    reachedBottom = true;
-                } else {
-                    return;
+            // 处理自动滚动
+            if (e.clientY < rect.top + threshold) {
+                if (!autoScrollTimer) {
+                    autoScrollTimer = setInterval(() => {
+                        wrapper.scrollTop -= 12;
+                        const first = getFirstRow();
+                        if (first) updateSelectionToRow(first);
+                    }, 25);
                 }
+            } else if (e.clientY > rect.bottom - threshold) {
+                if (!autoScrollTimer) {
+                    autoScrollTimer = setInterval(() => {
+                        wrapper.scrollTop += 12;
+                        const last = getLastRow();
+                        if (last) updateSelectionToRow(last);
+                    }, 25);
+                }
+            } else {
+                stopAutoScroll();
             }
 
-            if (targetIdx === undefined || isNaN(targetIdx) || targetIdx === endRealIdx) return;
-
-            endRealIdx = targetIdx;
-            const min = Math.min(startRealIdx, endRealIdx);
-            const max = Math.max(startRealIdx, endRealIdx);
-
-            State.selectedOrderIndices.clear();
-            const rows = tbody.querySelectorAll('tr.order-row');
-            let inRange = false;
-            rows.forEach(r => {
-                const idx = parseInt(r.dataset.realIndex);
-                if (idx === min) inRange = true;
-                if (inRange) State.selectedOrderIndices.add(idx);
-                if (idx === max) inRange = false;
-            });
-
-            scheduleUpdate();
+            // 处理当前鼠标下的行
+            let targetTr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
+            if (!targetTr) {
+                if (e.clientY < rect.top) {
+                    targetTr = getFirstRow();
+                } else if (e.clientY > rect.bottom) {
+                    targetTr = getLastRow();
+                }
+            }
+            if (targetTr) updateSelectionToRow(targetTr);
         };
 
         const onMouseUp = () => {
             isDragging = false;
             endRealIdx = -1;
-            reachedBottom = false;
             stopAutoScroll();
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
