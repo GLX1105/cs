@@ -938,13 +938,14 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选 ==========
+// ========== 录单表格拖选（修复：全方向实时更新选区） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
+    let lastMouseX = 0, lastMouseY = 0;
 
     function stopAutoScroll() {
         if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
@@ -969,6 +970,18 @@ function initEntryTableDragSelect() {
         State.entrySelectedIndices.clear();
         for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
         updateEntryRowSelection();
+    }
+
+    function doScrollAndSelect(delta) {
+        wrapper.scrollTop += delta;
+        // 用存储的鼠标坐标重新获取当前行
+        let tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
+        if (!tr) {
+            // 如果鼠标已经离开表格区域，根据方向选边界行
+            if (delta < 0) tr = getFirstRow();
+            else tr = getLastRow();
+        }
+        if (tr) updateSelectionToRow(tr);
     }
 
     tbody.addEventListener('mousedown', (e) => {
@@ -1002,43 +1015,31 @@ function initEntryTableDragSelect() {
 
     const onMouseMove = (e) => {
         if (!isDragging) return;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
 
-        if (!wrapper) return;
         const rect = wrapper.getBoundingClientRect();
         const topThreshold = rect.top + 30;
         const bottomThreshold = rect.bottom - 30;
 
-        // 先处理自动滚动
+        // 根据鼠标位置启动/停止自动滚动
         if (e.clientY < topThreshold) {
             if (!autoScrollInterval) {
-                autoScrollInterval = setInterval(() => {
-                    wrapper.scrollTop -= 15;
-                    // 持续将第一行纳入选区
-                    const first = getFirstRow();
-                    if (first) updateSelectionToRow(first);
-                }, 30);
+                autoScrollInterval = setInterval(() => doScrollAndSelect(-15), 30);
             }
         } else if (e.clientY > bottomThreshold) {
             if (!autoScrollInterval) {
-                autoScrollInterval = setInterval(() => {
-                    wrapper.scrollTop += 15;
-                    // 持续将最后一行纳入选区
-                    const last = getLastRow();
-                    if (last) updateSelectionToRow(last);
-                }, 30);
+                autoScrollInterval = setInterval(() => doScrollAndSelect(15), 30);
             }
         } else {
             stopAutoScroll();
         }
 
-        // 处理当前鼠标下的行
+        // 正常处理当前鼠标下的行
         let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
         if (!tr) {
-            if (e.clientY < rect.top) {
-                tr = getFirstRow();
-            } else if (e.clientY > rect.bottom) {
-                tr = getLastRow();
-            }
+            if (e.clientY < rect.top) tr = getFirstRow();
+            else if (e.clientY > rect.bottom) tr = getLastRow();
         }
         if (tr) updateSelectionToRow(tr);
     };
@@ -1064,13 +1065,14 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选 ==========
+// ========== 订单详情拖选（修复：全方向实时更新选区） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
+    let lastMouseX = 0, lastMouseY = 0;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1122,6 +1124,19 @@ function initOrderDetailDragSelect(tbody) {
         scheduleUpdate();
     }
 
+    function doScrollAndSelect(delta) {
+        const wrapper = getWrapper();
+        if (!wrapper) return;
+        wrapper.scrollTop += delta;
+        // 用存储的鼠标坐标重新获取当前行
+        let tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
+        if (!tr) {
+            if (delta < 0) tr = getFirstRow();
+            else tr = getLastRow();
+        }
+        if (tr) updateSelectionToRow(tr);
+    }
+
     tbody.addEventListener('mousedown', (e) => {
         if (e.button === 2) return;
         const tr = e.target.closest('tr.order-row');
@@ -1155,28 +1170,21 @@ function initOrderDetailDragSelect(tbody) {
 
         const onMouseMove = (e) => {
             if (!isDragging) return;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
 
             const wrapper = getWrapper();
             if (!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
             const threshold = 35;
 
-            // 处理自动滚动
             if (e.clientY < rect.top + threshold) {
                 if (!autoScrollTimer) {
-                    autoScrollTimer = setInterval(() => {
-                        wrapper.scrollTop -= 12;
-                        const first = getFirstRow();
-                        if (first) updateSelectionToRow(first);
-                    }, 25);
+                    autoScrollTimer = setInterval(() => doScrollAndSelect(-12), 25);
                 }
             } else if (e.clientY > rect.bottom - threshold) {
                 if (!autoScrollTimer) {
-                    autoScrollTimer = setInterval(() => {
-                        wrapper.scrollTop += 12;
-                        const last = getLastRow();
-                        if (last) updateSelectionToRow(last);
-                    }, 25);
+                    autoScrollTimer = setInterval(() => doScrollAndSelect(12), 25);
                 }
             } else {
                 stopAutoScroll();
@@ -1185,11 +1193,8 @@ function initOrderDetailDragSelect(tbody) {
             // 处理当前鼠标下的行
             let targetTr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
             if (!targetTr) {
-                if (e.clientY < rect.top) {
-                    targetTr = getFirstRow();
-                } else if (e.clientY > rect.bottom) {
-                    targetTr = getLastRow();
-                }
+                if (e.clientY < rect.top) targetTr = getFirstRow();
+                else if (e.clientY > rect.bottom) targetTr = getLastRow();
             }
             if (targetTr) updateSelectionToRow(targetTr);
         };
