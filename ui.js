@@ -938,28 +938,40 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（已修复：自动滚动时主动更新选区） ==========
+// ========== 录单表格拖选（完全用数学计算索引，不依赖元素位置） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
-    let lastMouseX = 0, lastMouseY = 0; // 记录最后鼠标位置，用于定时器内查询
+    let lastMouseX = 0, lastMouseY = 0;
+
+    function getRowHeight() {
+        const row = tbody.querySelector('tr.order-row');
+        return row ? row.getBoundingClientRect().height : 28;
+    }
+
+    function getScrollTop() {
+        return wrapper ? wrapper.scrollTop : 0;
+    }
+
+    function getTableTop() {
+        return wrapper ? wrapper.getBoundingClientRect().top : 0;
+    }
+
+    function getIndexFromY(clientY) {
+        const tableTop = getTableTop();
+        const scrollTop = getScrollTop();
+        const rowHeight = getRowHeight();
+        const relativeY = clientY - tableTop + scrollTop;
+        const idx = Math.floor(relativeY / rowHeight);
+        const totalRows = tbody.querySelectorAll('tr.order-row').length;
+        return Math.max(0, Math.min(idx, totalRows - 1));
+    }
 
     function updateSelectionToMouse(mx, my) {
-        // 获取当前鼠标下的行
-        let tr = document.elementFromPoint(mx, my)?.closest('tr.order-row');
-        if (!tr && wrapper) {
-            const wrapperRect = wrapper.getBoundingClientRect();
-            // 如果鼠标在表格下方，尝试获取最后一行
-            if (my > wrapperRect.bottom && my < wrapperRect.bottom + 30) {
-                const rows = tbody.querySelectorAll('tr.order-row');
-                if (rows.length > 0) tr = rows[rows.length - 1];
-            }
-        }
-        if (!tr) return;
-        const idx = parseInt(tr.dataset.index);
+        const idx = getIndexFromY(my);
         if (isNaN(idx)) return;
         if (idx === endIndex) return;
         endIndex = idx;
@@ -980,7 +992,6 @@ function initEntryTableDragSelect() {
         if (e.clientY < topThreshold) {
             autoScrollInterval = setInterval(() => {
                 wrapper.scrollTop -= 15;
-                // 滚动后立刻更新选区到当前鼠标位置
                 updateSelectionToMouse(lastMouseX, lastMouseY);
             }, 30);
         } else if (e.clientY > bottomThreshold) {
@@ -1035,55 +1046,60 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（已修复：自动滚动时主动更新选区） ==========
+// ========== 订单详情拖选（完全用数学计算索引，绕过虚拟滚动） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
-    let reachedBottom = false;
     let lastMouseX = 0, lastMouseY = 0;
+    const ROW_HEIGHT = 28; // 订单详情表格固定行高
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
     }
 
-    function getLastRowIndex() {
+    function getScrollTop() {
+        const wrapper = getWrapper();
+        return wrapper ? wrapper.scrollTop : 0;
+    }
+
+    function getTableTop() {
+        const wrapper = getWrapper();
+        return wrapper ? wrapper.getBoundingClientRect().top : 0;
+    }
+
+    // 根据鼠标 Y 坐标计算 realIndex（实际数据索引）
+    function getRealIndexFromY(clientY) {
+        const tableTop = getTableTop();
+        const scrollTop = getScrollTop();
+        const relativeY = clientY - tableTop + scrollTop;
+        const rowIndex = Math.floor(relativeY / ROW_HEIGHT);
         const rows = tbody.querySelectorAll('tr.order-row');
-        if (!rows.length) return -1;
-        return parseInt(rows[rows.length - 1].dataset.realIndex);
+        if (rows.length === 0) return -1;
+        const firstRealIndex = parseInt(rows[0].dataset.realIndex);
+        if (isNaN(firstRealIndex)) return -1;
+        // 虚拟滚动中，数据索引可能不连续，但我们可以通过第一个行的 realIndex 加上偏移来估算。
+        // 为了更精确，我们可以遍历已渲染的行找到最接近的行索引。
+        // 简单起见，直接用偏移量计算，并限制在已知的数据范围内（取最大 realIndex 为 lastRow 的 realIndex）
+        const lastRealIndex = parseInt(rows[rows.length-1].dataset.realIndex);
+        if (isNaN(lastRealIndex)) return firstRealIndex + rowIndex;
+        const estimatedIdx = firstRealIndex + rowIndex;
+        // 如果估算的索引超出了当前渲染范围，则返回边界索引，确保选中
+        return Math.min(estimatedIdx, lastRealIndex);
     }
 
     function updateSelectionToMouse(mx, my) {
-        let targetIdx;
-        const tr = document.elementFromPoint(mx, my)?.closest('tr.order-row');
-        if (tr) {
-            targetIdx = parseInt(tr.dataset.realIndex);
-            reachedBottom = false;
-        } else {
-            const wrapper = getWrapper();
-            if (wrapper && my > wrapper.getBoundingClientRect().bottom) {
-                if (reachedBottom) return;
-                targetIdx = getLastRowIndex();
-                reachedBottom = true;
-            } else {
-                return;
-            }
-        }
-        if (targetIdx === undefined || isNaN(targetIdx) || targetIdx === endRealIdx) return;
+        const targetIdx = getRealIndexFromY(my);
+        if (targetIdx < 0) return;
+        if (targetIdx === endRealIdx) return;
         endRealIdx = targetIdx;
         const min = Math.min(startRealIdx, endRealIdx);
         const max = Math.max(startRealIdx, endRealIdx);
         State.selectedOrderIndices.clear();
-        const rows = tbody.querySelectorAll('tr.order-row');
-        let inRange = false;
-        rows.forEach(r => {
-            const idx = parseInt(r.dataset.realIndex);
-            if (idx === min) inRange = true;
-            if (inRange) State.selectedOrderIndices.add(idx);
-            if (idx === max) inRange = false;
-        });
+        // 直接按数字范围选中 realIndex
+        for (let i = min; i <= max; i++) State.selectedOrderIndices.add(i);
         scheduleUpdate();
     }
 
@@ -1137,16 +1153,8 @@ function initOrderDetailDragSelect(tbody) {
             const min = Math.min(startRealIdx, realIdx);
             const max = Math.max(startRealIdx, realIdx);
             State.selectedOrderIndices.clear();
-            const rows = tbody.querySelectorAll('tr.order-row');
-            let started = false;
-            rows.forEach(r => {
-                const idx = parseInt(r.dataset.realIndex);
-                if (idx === min) started = true;
-                if (started) State.selectedOrderIndices.add(idx);
-                if (idx === max) started = false;
-            });
+            for (let i = min; i <= max; i++) State.selectedOrderIndices.add(i);
             endRealIdx = realIdx;
-            reachedBottom = false;
             updateRowSelection();
             return;
         }
@@ -1155,7 +1163,6 @@ function initOrderDetailDragSelect(tbody) {
         startRealIdx = realIdx;
         State.selectedOrderIndices.clear();
         State.selectedOrderIndices.add(realIdx);
-        reachedBottom = false;
         updateRowSelection();
 
         const onMouseMove = (e) => {
@@ -1169,7 +1176,6 @@ function initOrderDetailDragSelect(tbody) {
         const onMouseUp = () => {
             isDragging = false;
             endRealIdx = -1;
-            reachedBottom = false;
             stopAutoScroll();
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
