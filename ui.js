@@ -938,16 +938,18 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（修复：只扩展不缩小） ==========
+// ========== 录单表格拖选（修复：自动滚动期间禁止 onMouseMove 更新选区） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
+    let autoScrolling = false;   // 标志：是否处于自动滚动中
 
     function stopAutoScroll() {
         if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
+        autoScrolling = false;
     }
 
     function getFirstRow() {
@@ -997,6 +999,7 @@ function initEntryTableDragSelect() {
         }
         isDragging = true;
         startIndex = idx;
+        autoScrolling = false;
         State.entrySelectedIndices.clear();
         State.entrySelectedIndices.add(idx);
         updateEntryRowSelection();
@@ -1011,9 +1014,11 @@ function initEntryTableDragSelect() {
         const topThreshold = rect.top + 30;
         const bottomThreshold = rect.bottom - 30;
 
-        // 启动/停止自动滚动
+        // 根据鼠标位置启动/停止自动滚动
         if (e.clientY < topThreshold) {
-            if (!autoScrollInterval) {
+            if (!autoScrolling) {
+                autoScrolling = true;
+                stopAutoScroll(); // 清除可能存在的定时器
                 autoScrollInterval = setInterval(() => {
                     wrapper.scrollTop -= 15;
                     const tr = getFirstRow();
@@ -1021,7 +1026,9 @@ function initEntryTableDragSelect() {
                 }, 30);
             }
         } else if (e.clientY > bottomThreshold) {
-            if (!autoScrollInterval) {
+            if (!autoScrolling) {
+                autoScrolling = true;
+                stopAutoScroll();
                 autoScrollInterval = setInterval(() => {
                     wrapper.scrollTop += 15;
                     const tr = getLastRow();
@@ -1029,16 +1036,18 @@ function initEntryTableDragSelect() {
                 }, 30);
             }
         } else {
-            stopAutoScroll();
+            // 鼠标回到表格内部，停止自动滚动
+            if (autoScrolling) {
+                stopAutoScroll();
+            }
+            // 正常更新鼠标下的行
+            let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
+            if (!tr) {
+                if (e.clientY < rect.top) tr = getFirstRow();
+                else if (e.clientY > rect.bottom) tr = getLastRow();
+            }
+            if (tr) expandSelectionToRow(tr);
         }
-
-        // 正常更新当前鼠标下的行
-        let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
-        if (!tr) {
-            if (e.clientY < rect.top) tr = getFirstRow();
-            else if (e.clientY > rect.bottom) tr = getLastRow();
-        }
-        if (tr) expandSelectionToRow(tr);
     };
 
     const onMouseUp = () => {
@@ -1062,13 +1071,14 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（修复：只扩展不缩小） ==========
+// ========== 订单详情拖选（修复：自动滚动期间禁止 onMouseMove 更新选区） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
+    let autoScrolling = false;   // 标志：是否处于自动滚动中
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1089,6 +1099,7 @@ function initOrderDetailDragSelect(tbody) {
             clearInterval(autoScrollTimer);
             autoScrollTimer = null;
         }
+        autoScrolling = false;
     }
 
     function scheduleUpdate() {
@@ -1150,6 +1161,7 @@ function initOrderDetailDragSelect(tbody) {
 
         isDragging = true;
         startRealIdx = realIdx;
+        autoScrolling = false;
         State.selectedOrderIndices.clear();
         State.selectedOrderIndices.add(realIdx);
         updateRowSelection();
@@ -1162,9 +1174,11 @@ function initOrderDetailDragSelect(tbody) {
             const rect = wrapper.getBoundingClientRect();
             const threshold = 35;
 
-            // 启动/停止自动滚动
+            // 根据鼠标位置启动/停止自动滚动
             if (e.clientY < rect.top + threshold) {
-                if (!autoScrollTimer) {
+                if (!autoScrolling) {
+                    autoScrolling = true;
+                    stopAutoScroll();
                     autoScrollTimer = setInterval(() => {
                         wrapper.scrollTop -= 12;
                         const tr = getFirstRow();
@@ -1172,7 +1186,9 @@ function initOrderDetailDragSelect(tbody) {
                     }, 25);
                 }
             } else if (e.clientY > rect.bottom - threshold) {
-                if (!autoScrollTimer) {
+                if (!autoScrolling) {
+                    autoScrolling = true;
+                    stopAutoScroll();
                     autoScrollTimer = setInterval(() => {
                         wrapper.scrollTop += 12;
                         const tr = getLastRow();
@@ -1180,16 +1196,18 @@ function initOrderDetailDragSelect(tbody) {
                     }, 25);
                 }
             } else {
-                stopAutoScroll();
+                // 鼠标回到表格内部，停止自动滚动
+                if (autoScrolling) {
+                    stopAutoScroll();
+                }
+                // 正常更新当前鼠标下的行
+                let targetTr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
+                if (!targetTr) {
+                    if (e.clientY < rect.top) targetTr = getFirstRow();
+                    else if (e.clientY > rect.bottom) targetTr = getLastRow();
+                }
+                if (targetTr) expandSelectionToRow(targetTr);
             }
-
-            // 正常更新当前鼠标下的行
-            let targetTr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
-            if (!targetTr) {
-                if (e.clientY < rect.top) targetTr = getFirstRow();
-                else if (e.clientY > rect.bottom) targetTr = getLastRow();
-            }
-            if (targetTr) expandSelectionToRow(targetTr);
         };
 
         const onMouseUp = () => {
