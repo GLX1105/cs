@@ -938,7 +938,7 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（完全用数学计算索引，已修复第二次点击异常全选） ==========
+// ========== 录单表格拖选（完全用数学计算索引，不依赖元素位置） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
@@ -1014,6 +1014,8 @@ function initEntryTableDragSelect() {
         const idx = parseInt(tr.dataset.index);
         if (e.ctrlKey || e.metaKey) { if (State.entrySelectedIndices.has(idx)) State.entrySelectedIndices.delete(idx); else State.entrySelectedIndices.add(idx); updateEntryRowSelection(); return; }
         if (e.shiftKey && startIndex !== -1) { const min = Math.min(startIndex, idx), max = Math.max(startIndex, idx); State.entrySelectedIndices.clear(); for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i); endIndex = idx; updateEntryRowSelection(); return; }
+        // 开始拖选前，清除所有行的高亮（防止旧残留）
+        tbody.querySelectorAll('tr.order-row').forEach(r => r.classList.remove('selected'));
         isDragging = true; startIndex = idx; State.entrySelectedIndices.clear(); State.entrySelectedIndices.add(idx); updateEntryRowSelection();
         document.addEventListener('mouseup', onMouseUp); document.addEventListener('mousemove', onMouseMove);
     });
@@ -1047,7 +1049,7 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（完全用数学计算索引，已修复第二次点击异常全选） ==========
+// ========== 订单详情拖选（完全用数学计算索引，绕过虚拟滚动） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
@@ -1154,6 +1156,8 @@ function initOrderDetailDragSelect(tbody) {
             return;
         }
 
+        // 开始拖选前，清除所有行的高亮（防止旧残留）
+        tbody.querySelectorAll('tr.order-row').forEach(r => r.classList.remove('selected'));
         isDragging = true;
         startRealIdx = realIdx;
         State.selectedOrderIndices.clear();

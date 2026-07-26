@@ -618,7 +618,9 @@ function initOrderDetailVirtualScroll() {
 
         for (let i = start; i < end; i++) {
             const o = allOrders[i];
-            const rowClass = State.selectedOrderIndices.has(o._realIdx) ? 'selected' : '';
+            // 根据 State.selectedOrderIndices 设置高亮
+            const isSelected = State.selectedOrderIndices.has(o._realIdx);
+            const rowClass = isSelected ? 'selected' : '';
             const info = o.orderInfo || '';
             const winDisplay = o.winStatus === '中奖' ? `<span style="color:red;font-weight:bold;">中奖</span>` : (o.winStatus === '未中奖' ? '未中奖' : '未知');
             const highlightedInfo = highlightOrderInfo(info, o.winStatus, o.betType, null);
