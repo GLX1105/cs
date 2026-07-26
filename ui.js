@@ -938,14 +938,13 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选（修复：全方向实时更新选区） ==========
+// ========== 录单表格拖选（修复：只扩展不缩小） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
-    let lastMouseX = 0, lastMouseY = 0;
 
     function stopAutoScroll() {
         if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
@@ -961,27 +960,19 @@ function initEntryTableDragSelect() {
         return rows.length > 0 ? rows[rows.length - 1] : null;
     }
 
-    function updateSelectionToRow(tr) {
+    // 只扩展不缩小的更新函数
+    function expandSelectionToRow(tr) {
         if (!tr) return;
         const idx = parseInt(tr.dataset.index);
-        if (idx === endIndex) return;
+        const currentMin = Math.min(startIndex, endIndex !== -1 ? endIndex : startIndex);
+        const currentMax = Math.max(startIndex, endIndex !== -1 ? endIndex : startIndex);
+        const newMin = Math.min(idx, currentMin);
+        const newMax = Math.max(idx, currentMax);
+        if (newMin === currentMin && newMax === currentMax) return;
         endIndex = idx;
-        const min = Math.min(startIndex, endIndex), max = Math.max(startIndex, endIndex);
         State.entrySelectedIndices.clear();
-        for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
+        for (let i = newMin; i <= newMax; i++) State.entrySelectedIndices.add(i);
         updateEntryRowSelection();
-    }
-
-    function doScrollAndSelect(delta) {
-        wrapper.scrollTop += delta;
-        // 用存储的鼠标坐标重新获取当前行
-        let tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
-        if (!tr) {
-            // 如果鼠标已经离开表格区域，根据方向选边界行
-            if (delta < 0) tr = getFirstRow();
-            else tr = getLastRow();
-        }
-        if (tr) updateSelectionToRow(tr);
     }
 
     tbody.addEventListener('mousedown', (e) => {
@@ -1015,33 +1006,39 @@ function initEntryTableDragSelect() {
 
     const onMouseMove = (e) => {
         if (!isDragging) return;
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
 
         const rect = wrapper.getBoundingClientRect();
         const topThreshold = rect.top + 30;
         const bottomThreshold = rect.bottom - 30;
 
-        // 根据鼠标位置启动/停止自动滚动
+        // 启动/停止自动滚动
         if (e.clientY < topThreshold) {
             if (!autoScrollInterval) {
-                autoScrollInterval = setInterval(() => doScrollAndSelect(-15), 30);
+                autoScrollInterval = setInterval(() => {
+                    wrapper.scrollTop -= 15;
+                    const tr = getFirstRow();
+                    if (tr) expandSelectionToRow(tr);
+                }, 30);
             }
         } else if (e.clientY > bottomThreshold) {
             if (!autoScrollInterval) {
-                autoScrollInterval = setInterval(() => doScrollAndSelect(15), 30);
+                autoScrollInterval = setInterval(() => {
+                    wrapper.scrollTop += 15;
+                    const tr = getLastRow();
+                    if (tr) expandSelectionToRow(tr);
+                }, 30);
             }
         } else {
             stopAutoScroll();
         }
 
-        // 正常处理当前鼠标下的行
+        // 正常更新当前鼠标下的行
         let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
         if (!tr) {
             if (e.clientY < rect.top) tr = getFirstRow();
             else if (e.clientY > rect.bottom) tr = getLastRow();
         }
-        if (tr) updateSelectionToRow(tr);
+        if (tr) expandSelectionToRow(tr);
     };
 
     const onMouseUp = () => {
@@ -1065,14 +1062,13 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选（修复：全方向实时更新选区） ==========
+// ========== 订单详情拖选（修复：只扩展不缩小） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
-    let lastMouseX = 0, lastMouseY = 0;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1105,36 +1101,26 @@ function initOrderDetailDragSelect(tbody) {
         }
     }
 
-    function updateSelectionToRow(tr) {
+    // 只扩展不缩小的更新函数
+    function expandSelectionToRow(tr) {
         if (!tr) return;
         const realIdx = parseInt(tr.dataset.realIndex);
-        if (realIdx === endRealIdx) return;
+        const currentMin = Math.min(startRealIdx, endRealIdx !== -1 ? endRealIdx : startRealIdx);
+        const currentMax = Math.max(startRealIdx, endRealIdx !== -1 ? endRealIdx : startRealIdx);
+        const newMin = Math.min(realIdx, currentMin);
+        const newMax = Math.max(realIdx, currentMax);
+        if (newMin === currentMin && newMax === currentMax) return;
         endRealIdx = realIdx;
-        const min = Math.min(startRealIdx, endRealIdx);
-        const max = Math.max(startRealIdx, endRealIdx);
         State.selectedOrderIndices.clear();
         const rows = tbody.querySelectorAll('tr.order-row');
         let inRange = false;
         rows.forEach(r => {
             const idx = parseInt(r.dataset.realIndex);
-            if (idx === min) inRange = true;
+            if (idx === newMin) inRange = true;
             if (inRange) State.selectedOrderIndices.add(idx);
-            if (idx === max) inRange = false;
+            if (idx === newMax) inRange = false;
         });
         scheduleUpdate();
-    }
-
-    function doScrollAndSelect(delta) {
-        const wrapper = getWrapper();
-        if (!wrapper) return;
-        wrapper.scrollTop += delta;
-        // 用存储的鼠标坐标重新获取当前行
-        let tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
-        if (!tr) {
-            if (delta < 0) tr = getFirstRow();
-            else tr = getLastRow();
-        }
-        if (tr) updateSelectionToRow(tr);
     }
 
     tbody.addEventListener('mousedown', (e) => {
@@ -1170,33 +1156,40 @@ function initOrderDetailDragSelect(tbody) {
 
         const onMouseMove = (e) => {
             if (!isDragging) return;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
 
             const wrapper = getWrapper();
             if (!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
             const threshold = 35;
 
+            // 启动/停止自动滚动
             if (e.clientY < rect.top + threshold) {
                 if (!autoScrollTimer) {
-                    autoScrollTimer = setInterval(() => doScrollAndSelect(-12), 25);
+                    autoScrollTimer = setInterval(() => {
+                        wrapper.scrollTop -= 12;
+                        const tr = getFirstRow();
+                        if (tr) expandSelectionToRow(tr);
+                    }, 25);
                 }
             } else if (e.clientY > rect.bottom - threshold) {
                 if (!autoScrollTimer) {
-                    autoScrollTimer = setInterval(() => doScrollAndSelect(12), 25);
+                    autoScrollTimer = setInterval(() => {
+                        wrapper.scrollTop += 12;
+                        const tr = getLastRow();
+                        if (tr) expandSelectionToRow(tr);
+                    }, 25);
                 }
             } else {
                 stopAutoScroll();
             }
 
-            // 处理当前鼠标下的行
+            // 正常更新当前鼠标下的行
             let targetTr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
             if (!targetTr) {
                 if (e.clientY < rect.top) targetTr = getFirstRow();
                 else if (e.clientY > rect.bottom) targetTr = getLastRow();
             }
-            if (targetTr) updateSelectionToRow(targetTr);
+            if (targetTr) expandSelectionToRow(targetTr);
         };
 
         const onMouseUp = () => {
