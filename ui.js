@@ -938,13 +938,14 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选 ==========
+// ========== 录单表格拖选（修复：自动滚动时实时更新选区） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
+    let lastMouseX = 0, lastMouseY = 0;
 
     function startAutoScroll(e) {
         if (!wrapper) return;
@@ -956,14 +957,34 @@ function initEntryTableDragSelect() {
         if (mouseY < topThreshold) {
             autoScrollInterval = setInterval(() => {
                 wrapper.scrollTop -= 15;
-                const event = new MouseEvent('mousemove', { clientX: e.clientX, clientY: e.clientY });
-                document.dispatchEvent(event);
+                // 实时获取当前鼠标下的行并更新选区
+                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
+                if (tr) {
+                    const idx = parseInt(tr.dataset.index);
+                    if (idx !== endIndex) {
+                        endIndex = idx;
+                        const min = Math.min(startIndex, endIndex), max = Math.max(startIndex, endIndex);
+                        State.entrySelectedIndices.clear();
+                        for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
+                        updateEntryRowSelection();
+                    }
+                }
             }, 30);
         } else if (mouseY > bottomThreshold) {
             autoScrollInterval = setInterval(() => {
                 wrapper.scrollTop += 15;
-                const event = new MouseEvent('mousemove', { clientX: e.clientX, clientY: e.clientY });
-                document.dispatchEvent(event);
+                // 实时获取当前鼠标下的行并更新选区
+                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
+                if (tr) {
+                    const idx = parseInt(tr.dataset.index);
+                    if (idx !== endIndex) {
+                        endIndex = idx;
+                        const min = Math.min(startIndex, endIndex), max = Math.max(startIndex, endIndex);
+                        State.entrySelectedIndices.clear();
+                        for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
+                        updateEntryRowSelection();
+                    }
+                }
             }, 30);
         }
     }
@@ -986,6 +1007,8 @@ function initEntryTableDragSelect() {
 
     const onMouseMove = (e) => {
         if (!isDragging) return;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
         startAutoScroll(e);
         let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
         if (!tr && wrapper) {
@@ -1027,7 +1050,7 @@ function initEntryContextMenu() {
 
 function updateEntryRowSelection() { document.querySelectorAll('#entryTableBody .order-row').forEach(row => { const idx = parseInt(row.dataset.index); row.classList.toggle('selected', State.entrySelectedIndices.has(idx)); }); }
 
-// ========== 订单详情拖选 ==========
+// ========== 订单详情拖选（修复：自动滚动时实时更新选区） ==========
 function initOrderDetailDragSelect(tbody) {
     let isDragging = false;
     let startRealIdx = -1;
@@ -1035,6 +1058,7 @@ function initOrderDetailDragSelect(tbody) {
     let autoScrollTimer = null;
     let pendingUpdate = false;
     let reachedBottom = false;
+    let lastMouseX = 0, lastMouseY = 0;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1058,10 +1082,50 @@ function initOrderDetailDragSelect(tbody) {
         if (mouseY < rect.top + threshold) {
             autoScrollTimer = setInterval(() => {
                 wrapper.scrollTop -= 12;
+                // 实时获取当前鼠标下的行并更新选区
+                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
+                if (tr) {
+                    const realIdx = parseInt(tr.dataset.realIndex);
+                    if (realIdx !== endRealIdx) {
+                        endRealIdx = realIdx;
+                        const min = Math.min(startRealIdx, endRealIdx);
+                        const max = Math.max(startRealIdx, endRealIdx);
+                        State.selectedOrderIndices.clear();
+                        const rows = tbody.querySelectorAll('tr.order-row');
+                        let inRange = false;
+                        rows.forEach(r => {
+                            const idx = parseInt(r.dataset.realIndex);
+                            if (idx === min) inRange = true;
+                            if (inRange) State.selectedOrderIndices.add(idx);
+                            if (idx === max) inRange = false;
+                        });
+                        scheduleUpdate();
+                    }
+                }
             }, 25);
         } else if (mouseY > rect.bottom - threshold) {
             autoScrollTimer = setInterval(() => {
                 wrapper.scrollTop += 12;
+                // 实时获取当前鼠标下的行并更新选区
+                const tr = document.elementFromPoint(lastMouseX, lastMouseY)?.closest('tr.order-row');
+                if (tr) {
+                    const realIdx = parseInt(tr.dataset.realIndex);
+                    if (realIdx !== endRealIdx) {
+                        endRealIdx = realIdx;
+                        const min = Math.min(startRealIdx, endRealIdx);
+                        const max = Math.max(startRealIdx, endRealIdx);
+                        State.selectedOrderIndices.clear();
+                        const rows = tbody.querySelectorAll('tr.order-row');
+                        let inRange = false;
+                        rows.forEach(r => {
+                            const idx = parseInt(r.dataset.realIndex);
+                            if (idx === min) inRange = true;
+                            if (inRange) State.selectedOrderIndices.add(idx);
+                            if (idx === max) inRange = false;
+                        });
+                        scheduleUpdate();
+                    }
+                }
             }, 25);
         }
     }
@@ -1119,6 +1183,8 @@ function initOrderDetailDragSelect(tbody) {
         const onMouseMove = (e) => {
             if (!isDragging) return;
 
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
             startAutoScroll(e);
 
             let targetIdx;
