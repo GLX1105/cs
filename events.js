@@ -123,6 +123,8 @@ function switchPage(pageName) {
         if (pageName === 'todayDraw') { bindDrawInputs(); bindTodayDrawControls(); }
         if (pageName === 'tools') bindCalcButton();
         if (pageName === 'orderDetail') {
+            // 重新绑定事件（完整渲染后）
+            bindOrderDetailEvents();
             const filterRegionOpts = ['不限', '澳门', '香港', '粤港'];
             const filterBetTypeOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.betType))].filter(Boolean);
             const filterWinStatusOpts = ['不限', '中奖', '未中奖', '未知'];
@@ -146,8 +148,6 @@ function switchPage(pageName) {
                 switchPage('orderDetail');
             });
 
-            bindOrderDetailEvents();
-            initOrderDetailVirtualScroll();
             document.getElementById('btnFilterDuijiang')?.addEventListener('click', performFilterDuijiang);
             document.getElementById('btnComprehensiveDuijiang')?.addEventListener('click', performComprehensiveDuijiang);
             document.getElementById('btnResetDraw')?.addEventListener('click', () => {
@@ -274,92 +274,46 @@ function refreshOperationLogData() {
 }
 
 function refreshOrderDetailData() {
-    if (window._refreshVirtualScroll) window._refreshVirtualScroll();
-    updateOrderGroupCount();
-    const totalEl = document.querySelector('#orderDetailTableWrapper + div span b');
-    if (totalEl) {
-        const filtered = getFilteredOrdersForDetail();
-        const total = filtered.reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
-        totalEl.textContent = formatMoney(total);
+    // 不再使用虚拟滚动，直接重新渲染整个页面内容
+    const main = document.getElementById('mainContent');
+    if (main) {
+        main.innerHTML = renderOrderDetail();
+        // 重新绑定事件
+        bindOrderDetailEvents();
+        // 重新创建下拉框
+        const filterRegionOpts = ['不限', '澳门', '香港', '粤港'];
+        const filterBetTypeOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.betType))].filter(Boolean);
+        const filterWinStatusOpts = ['不限', '中奖', '未中奖', '未知'];
+        const filterReporterOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.reporter))].filter(Boolean);
+        const schemeNames = window.schemes.map((s, i) => s.name);
+        createCustomSelect(document.getElementById('filterRegionWrapper'), filterRegionOpts, State.orderDetailFilters.region, (val) => {
+            State.orderDetailFilters.region = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+        });
+        createCustomSelect(document.getElementById('filterBetTypeWrapper'), filterBetTypeOpts, State.orderDetailFilters.betType, (val) => {
+            State.orderDetailFilters.betType = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+        });
+        createCustomSelect(document.getElementById('filterWinStatusWrapper'), filterWinStatusOpts, State.orderDetailFilters.winStatus, (val) => {
+            State.orderDetailFilters.winStatus = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+        });
+        createCustomSelect(document.getElementById('filterReporterWrapper'), filterReporterOpts, State.orderDetailFilters.reporter, (val) => {
+            State.orderDetailFilters.reporter = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
+        });
+        createCustomSelect(document.getElementById('orderDetailSchemeSelectWrapper'), schemeNames, window.schemes[State.selectedSchemeIdx].name, (val) => {
+            State.selectedSchemeIdx = window.schemes.findIndex(s => s.name === val);
+            persistAll();
+            switchPage('orderDetail');
+        });
+        document.getElementById('btnFilterDuijiang')?.addEventListener('click', performFilterDuijiang);
+        document.getElementById('btnComprehensiveDuijiang')?.addEventListener('click', performComprehensiveDuijiang);
+        document.getElementById('btnResetDraw')?.addEventListener('click', () => {
+            showConfirm('确定重置所有兑奖结果吗？').then(ok => { if (ok) resetDrawData(); });
+        });
+        document.getElementById('orderSearchBtn')?.addEventListener('click', performOrderSearch);
+        document.getElementById('orderSearchInput')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') performOrderSearch();
+        });
+        updateOrderGroupCount();
     }
-
-    // --- 更新开奖区域（通过 id 定位） ---
-    const drawContainer = document.getElementById('drawAreaContainer');
-    if (drawContainer) {
-        const innerDiv = drawContainer.querySelector('div');
-        if (innerDiv) {
-            const areas = ['macau','hongkong','yuegang'];
-            const areaLabels = {macau:'澳门',hongkong:'香港',yuegang:'粤港'};
-            const todayDraw = getCurrentDrawData();
-            let drawHTML = '';
-            areas.forEach((area, idx) => {
-                const data = todayDraw[area] || {nums:[], shengs:[]};
-                let cellsHTML = '';
-                for(let i=0;i<7;i++){
-                    const num = data.nums[i] || '';
-                    const sheng = data.shengs[i] || '';
-                    if (i === 6) {
-                        cellsHTML += `<div class="flex flex-col items-center justify-end" style="width:40px;">
-                            <span style="font-size:20px;font-weight:bold;line-height:40px;">+</span>
-                            <div style="height:28px;"></div>
-                        </div>`;
-                    }
-                    cellsHTML += `<div class="flex flex-col items-center gap-1">
-                        ${buildBallHTML(num)}
-                        ${buildShengBlock(sheng)}
-                    </div>`;
-                }
-                const areaHist = State.historyRecords.filter(r => r.area === areaLabels[area] && r.date === State.currentFilterDate);
-                const latestQihao = areaHist.length ? areaHist[areaHist.length-1].qihao : '';
-                const qihaoShort = latestQihao ? String(latestQihao).slice(-3) + '期' : '';
-                let titleText = areaLabels[area] + '开奖';
-                if (area !== 'hongkong' && qihaoShort) titleText += ' ' + qihaoShort;
-                drawHTML += `<div class="flex flex-col items-center gap-1 px-2">
-                    <div class="text-[11px] font-medium text-gray-600">${titleText}</div>
-                    <div class="flex justify-center gap-1 flex-wrap items-end">${cellsHTML}</div>
-                </div>`;
-                if (idx < areas.length - 1) drawHTML += `<div class="border-l border-gray-300"></div>`;
-            });
-            innerDiv.innerHTML = drawHTML;
-        }
-    }
-
-    // --- 更新兑奖结果框（若已兑奖） ---
-    if (State.filterDuijiangDone) {
-        const macauDiv = document.getElementById('duijiangMacauContent');
-        const hkDiv = document.getElementById('duijiangHongkongContent');
-        const ygDiv = document.getElementById('duijiangYuegangContent');
-        const allDiv = document.getElementById('duijiangAllContent');
-        if (macauDiv) macauDiv.innerHTML = generateRegionProfitSummary('澳门', State.orderList);
-        if (hkDiv) hkDiv.innerHTML = generateRegionProfitSummary('香港', State.orderList);
-        if (ygDiv) ygDiv.innerHTML = generateRegionProfitSummary('粤港', State.orderList);
-        if (allDiv) allDiv.innerHTML = generateRegionProfitSummary('all', State.orderList);
-    }
-
-    // --- 重新创建筛选下拉框（确保选项列表为最新） ---
-    const filterRegionOpts = ['不限', '澳门', '香港', '粤港'];
-    const filterBetTypeOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.betType))].filter(Boolean);
-    const filterWinStatusOpts = ['不限', '中奖', '未中奖', '未知'];
-    const filterReporterOpts = ['不限', ...new Set(State.orderList.filter(o => o.date === State.currentFilterDate).map(o => o.reporter))].filter(Boolean);
-    const schemeNames = window.schemes.map((s, i) => s.name);
-
-    createCustomSelect(document.getElementById('filterRegionWrapper'), filterRegionOpts, State.orderDetailFilters.region, (val) => {
-        State.orderDetailFilters.region = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-    });
-    createCustomSelect(document.getElementById('filterBetTypeWrapper'), filterBetTypeOpts, State.orderDetailFilters.betType, (val) => {
-        State.orderDetailFilters.betType = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-    });
-    createCustomSelect(document.getElementById('filterWinStatusWrapper'), filterWinStatusOpts, State.orderDetailFilters.winStatus, (val) => {
-        State.orderDetailFilters.winStatus = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-    });
-    createCustomSelect(document.getElementById('filterReporterWrapper'), filterReporterOpts, State.orderDetailFilters.reporter, (val) => {
-        State.orderDetailFilters.reporter = val; State.selectedOrderIndices.clear(); switchPage('orderDetail');
-    });
-    createCustomSelect(document.getElementById('orderDetailSchemeSelectWrapper'), schemeNames, window.schemes[State.selectedSchemeIdx].name, (val) => {
-        State.selectedSchemeIdx = window.schemes.findIndex(s => s.name === val);
-        persistAll();
-        switchPage('orderDetail');
-    });
 }
 
 // ========== 全局地区筛选事件 ==========
@@ -588,107 +542,6 @@ async function initApp() {
             }
         }
     });
-}
-
-// ========== 订单详情虚拟滚动 ==========
-function initOrderDetailVirtualScroll() {
-    const wrapper = document.getElementById('orderDetailTableWrapper');
-    const tbody = document.getElementById('orderDetailTbody');
-    if (!wrapper || !tbody) return;
-
-    const ROW_HEIGHT = 28;
-    let allOrders = [];
-    let totalHeight = 0;
-    let visibleCount = 0;
-    let startIdx = 0;
-
-    function updateVisibleRows() {
-        const scrollTop = wrapper.scrollTop;
-        startIdx = Math.floor(scrollTop / ROW_HEIGHT);
-        const endIdx = Math.min(startIdx + visibleCount + 5, allOrders.length);
-        renderRows(startIdx, endIdx);
-    }
-
-    function renderRows(start, end) {
-        const fragment = document.createDocumentFragment();
-        const topSpacer = document.createElement('tr');
-        topSpacer.style.height = (start * ROW_HEIGHT) + 'px';
-        topSpacer.innerHTML = '<td colspan="12" style="padding:0;border:none;"></td>';
-        fragment.appendChild(topSpacer);
-
-        for (let i = start; i < end; i++) {
-            const o = allOrders[i];
-            // 根据 State.selectedOrderIndices 设置高亮
-            const isSelected = State.selectedOrderIndices.has(o._realIdx);
-            const rowClass = isSelected ? 'selected' : '';
-            const info = o.orderInfo || '';
-            const winDisplay = o.winStatus === '中奖' ? `<span style="color:red;font-weight:bold;">中奖</span>` : (o.winStatus === '未中奖' ? '未中奖' : '未知');
-            const highlightedInfo = highlightOrderInfo(info, o.winStatus, o.betType, null);
-            const winAmountHtml = o.winStatus === '中奖' && o.winAmount ? `<span class="win-amount-red">${formatMoney(parseFloat(o.winAmount))}</span>` : '';
-            const tr = document.createElement('tr');
-            tr.className = `order-row ${rowClass}`;
-            tr.setAttribute('data-index', i);
-            tr.setAttribute('data-real-index', o._realIdx);
-            tr.innerHTML = `
-                <td>${i + 1}</td>
-                <td>${o.region}</td>
-                <td>${(o.betType || '').trim()}</td>
-                <td class="order-info-cell" title="${info.replace(/"/g,'&quot;')}">${highlightedInfo}</td>
-                <td>${o.calcMethod || ''}</td>
-                <td>${formatMoney(o.amount)}</td>
-                <td>${formatMoney(o.totalAmount)}</td>
-                <td>${o.orderSeq || ''}条</td>
-                <td>${o.reporter || ''}</td>
-                <td>${winDisplay}</td>
-                <td>${winAmountHtml}</td>
-                <td>${o.remark || ''}</td>
-            `;
-            fragment.appendChild(tr);
-        }
-
-        const bottomHeight = totalHeight - end * ROW_HEIGHT;
-        if (bottomHeight > 0) {
-            const bottomSpacer = document.createElement('tr');
-            bottomSpacer.style.height = bottomHeight + 'px';
-            bottomSpacer.innerHTML = '<td colspan="12" style="padding:0;border:none;"></td>';
-            fragment.appendChild(bottomSpacer);
-        }
-
-        tbody.innerHTML = '';
-        tbody.appendChild(fragment);
-    }
-
-    function initData() {
-        const today = State.currentFilterDate;
-        const filterRegion = State.orderDetailFilters.region;
-        const filterBetType = State.orderDetailFilters.betType;
-        const filterWinStatus = State.orderDetailFilters.winStatus;
-        const filterRep = State.orderDetailFilters.reporter;
-
-        allOrders = [];
-        for (let i = 0; i < State.orderList.length; i++) {
-            const o = State.orderList[i];
-            if (o.date !== today) continue;
-            if (filterRegion !== '不限' && o.region !== filterRegion) continue;
-            if (filterBetType !== '不限' && o.betType !== filterBetType) continue;
-            if (filterWinStatus !== '不限' && o.winStatus !== filterWinStatus) continue;
-            if (filterRep !== '不限' && o.reporter !== filterRep) continue;
-            allOrders.push({ ...o, _realIdx: i });
-        }
-
-        totalHeight = allOrders.length * ROW_HEIGHT;
-        visibleCount = Math.ceil(wrapper.clientHeight / ROW_HEIGHT) + 2;
-        updateVisibleRows();
-    }
-
-    wrapper.removeEventListener('scroll', updateVisibleRows);
-    wrapper.addEventListener('scroll', updateVisibleRows);
-
-    initData();
-
-    window._refreshVirtualScroll = function() {
-        initData();
-    };
 }
 
 // ========== 启动应用 ==========
