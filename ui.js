@@ -938,59 +938,55 @@ function showOrderGroupModal() {
     }
 }
 
-// ========== 录单表格拖选 ==========
+// ========== 录单表格拖选（修复最后一行） ==========
 function initEntryTableDragSelect() {
     const tbody = document.getElementById('entryTableBody');
     if (!tbody) return;
     const wrapper = document.getElementById('entryTableWrapper');
     let isDragging = false, startIndex = -1, endIndex = -1;
     let autoScrollInterval = null;
+    let lastMoveEvent = null;
 
     function startAutoScroll(e) {
         if (!wrapper) return;
-        const rect = wrapper.getBoundingClientRect();
-        const mouseY = e.clientY;
-        const topThreshold = rect.top + 30;
-        const bottomThreshold = rect.bottom - 30;
-        if (autoScrollInterval) return;
-        if (mouseY < topThreshold) {
-            autoScrollInterval = setInterval(() => {
+        if (autoScrollInterval) return; // 已经在滚动
+
+        autoScrollInterval = setInterval(() => {
+            if (!isDragging || !lastMoveEvent) return;
+            const mouseY = lastMoveEvent.clientY;
+            const rect = wrapper.getBoundingClientRect();
+            const topThreshold = rect.top + 30;
+            const bottomThreshold = rect.bottom - 30;
+
+            if (mouseY < topThreshold) {
                 wrapper.scrollTop -= 15;
-                const event = new MouseEvent('mousemove', { clientX: e.clientX, clientY: e.clientY });
-                document.dispatchEvent(event);
-            }, 30);
-        } else if (mouseY > bottomThreshold) {
-            autoScrollInterval = setInterval(() => {
+            } else if (mouseY > bottomThreshold) {
                 wrapper.scrollTop += 15;
-                const event = new MouseEvent('mousemove', { clientX: e.clientX, clientY: e.clientY });
-                document.dispatchEvent(event);
-            }, 30);
-        }
+            } else {
+                // 鼠标在中间区域，停止自动滚动
+                stopAutoScroll();
+                return;
+            }
+
+            // 滚动后，用当前鼠标坐标重新检测行
+            const evt = { clientX: lastMoveEvent.clientX, clientY: lastMoveEvent.clientY };
+            handleMove(evt);
+        }, 30);
     }
 
     function stopAutoScroll() {
-        if (autoScrollInterval) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
     }
 
-    tbody.addEventListener('mousedown', (e) => {
-        if (e.button === 2) return;
-        const tr = e.target.closest('tr.order-row');
-        if (!tr) return;
-        if (e.target.closest('input') || e.target.closest('select') || e.target.closest('.custom-select-wrapper')) return;
-        const idx = parseInt(tr.dataset.index);
-        if (e.ctrlKey || e.metaKey) { if (State.entrySelectedIndices.has(idx)) State.entrySelectedIndices.delete(idx); else State.entrySelectedIndices.add(idx); updateEntryRowSelection(); return; }
-        if (e.shiftKey && startIndex !== -1) { const min = Math.min(startIndex, idx), max = Math.max(startIndex, idx); State.entrySelectedIndices.clear(); for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i); endIndex = idx; updateEntryRowSelection(); return; }
-        isDragging = true; startIndex = idx; State.entrySelectedIndices.clear(); State.entrySelectedIndices.add(idx); updateEntryRowSelection();
-        document.addEventListener('mouseup', onMouseUp); document.addEventListener('mousemove', onMouseMove);
-    });
-
-    const onMouseMove = (e) => {
-        if (!isDragging) return;
-        startAutoScroll(e);
+    function handleMove(e) {
         let tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
+        // 如果鼠标在容器下方，且找不到行，尝试选取最后一行
         if (!tr && wrapper) {
-            const wrapperRect = wrapper.getBoundingClientRect();
-            if (e.clientY > wrapperRect.bottom && e.clientY < wrapperRect.bottom + 30) {
+            const rect = wrapper.getBoundingClientRect();
+            if (e.clientY >= rect.bottom - 5) {
                 const rows = tbody.querySelectorAll('tr.order-row');
                 if (rows.length > 0) {
                     tr = rows[rows.length - 1];
@@ -999,20 +995,69 @@ function initEntryTableDragSelect() {
         }
         if (!tr) return;
         const idx = parseInt(tr.dataset.index);
-        if (idx === endIndex) return;
+        if (isNaN(idx) || idx === endIndex) return;
         endIndex = idx;
-        const min = Math.min(startIndex, endIndex), max = Math.max(startIndex, endIndex);
+        const min = Math.min(startIndex, endIndex);
+        const max = Math.max(startIndex, endIndex);
         State.entrySelectedIndices.clear();
         for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
         updateEntryRowSelection();
-    };
+    }
 
-    const onMouseUp = () => {
-        isDragging = false; endIndex = -1;
+    tbody.addEventListener('mousedown', (e) => {
+        if (e.button === 2) return;
+        const tr = e.target.closest('tr.order-row');
+        if (!tr) return;
+        if (e.target.closest('input') || e.target.closest('select') || e.target.closest('.custom-select-wrapper')) return;
+        const idx = parseInt(tr.dataset.index);
+        if (e.ctrlKey || e.metaKey) {
+            if (State.entrySelectedIndices.has(idx)) State.entrySelectedIndices.delete(idx);
+            else State.entrySelectedIndices.add(idx);
+            updateEntryRowSelection();
+            return;
+        }
+        if (e.shiftKey && startIndex !== -1) {
+            const min = Math.min(startIndex, idx), max = Math.max(startIndex, idx);
+            State.entrySelectedIndices.clear();
+            for (let i = min; i <= max; i++) State.entrySelectedIndices.add(i);
+            endIndex = idx;
+            updateEntryRowSelection();
+            return;
+        }
+        isDragging = true;
+        startIndex = idx;
+        State.entrySelectedIndices.clear();
+        State.entrySelectedIndices.add(idx);
+        updateEntryRowSelection();
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+        lastMoveEvent = e;
+        // 如果自动滚动未启动，检查是否需要启动
+        if (!autoScrollInterval) {
+            const rect = wrapper.getBoundingClientRect();
+            const mouseY = e.clientY;
+            const topThreshold = rect.top + 30;
+            const bottomThreshold = rect.bottom - 30;
+            if (mouseY < topThreshold || mouseY > bottomThreshold) {
+                startAutoScroll(e);
+            }
+        }
+        handleMove(e);
+    }
+
+    function onMouseUp() {
+        isDragging = false;
+        endIndex = -1;
         stopAutoScroll();
+        lastMoveEvent = null;
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
-    };
+    }
 }
 
 // ========== 录单右键菜单 ==========
@@ -1034,7 +1079,7 @@ function initOrderDetailDragSelect(tbody) {
     let endRealIdx = -1;
     let autoScrollTimer = null;
     let pendingUpdate = false;
-    let reachedBottom = false;
+    let lastMoveEvent = null;
 
     function getWrapper() {
         return document.getElementById('orderDetailTableWrapper');
@@ -1049,21 +1094,25 @@ function initOrderDetailDragSelect(tbody) {
     function startAutoScroll(e) {
         const wrapper = getWrapper();
         if (!wrapper) return;
-        const rect = wrapper.getBoundingClientRect();
-        const mouseY = e.clientY;
-        const threshold = 35;
+        if (autoScrollTimer) return;
 
-        stopAutoScroll();
+        autoScrollTimer = setInterval(() => {
+            if (!isDragging || !lastMoveEvent) return;
+            const mouseY = lastMoveEvent.clientY;
+            const rect = wrapper.getBoundingClientRect();
+            const threshold = 35;
 
-        if (mouseY < rect.top + threshold) {
-            autoScrollTimer = setInterval(() => {
+            if (mouseY < rect.top + threshold) {
                 wrapper.scrollTop -= 12;
-            }, 25);
-        } else if (mouseY > rect.bottom - threshold) {
-            autoScrollTimer = setInterval(() => {
+            } else if (mouseY > rect.bottom - threshold) {
                 wrapper.scrollTop += 12;
-            }, 25);
-        }
+            } else {
+                stopAutoScroll();
+                return;
+            }
+
+            handleMove(lastMoveEvent);
+        }, 25);
     }
 
     function stopAutoScroll() {
@@ -1081,6 +1130,37 @@ function initOrderDetailDragSelect(tbody) {
                 pendingUpdate = false;
             });
         }
+    }
+
+    function handleMove(e) {
+        let targetIdx;
+        const tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
+        if (tr) {
+            targetIdx = parseInt(tr.dataset.realIndex);
+        } else {
+            const wrapper = getWrapper();
+            if (wrapper && e.clientY >= wrapper.getBoundingClientRect().bottom - 2) {
+                targetIdx = getLastRowIndex();
+            }
+        }
+
+        if (targetIdx === undefined || isNaN(targetIdx) || targetIdx === endRealIdx) return;
+
+        endRealIdx = targetIdx;
+        const min = Math.min(startRealIdx, endRealIdx);
+        const max = Math.max(startRealIdx, endRealIdx);
+
+        State.selectedOrderIndices.clear();
+        const rows = tbody.querySelectorAll('tr.order-row');
+        let inRange = false;
+        rows.forEach(r => {
+            const idx = parseInt(r.dataset.realIndex);
+            if (idx === min) inRange = true;
+            if (inRange) State.selectedOrderIndices.add(idx);
+            if (idx === max) inRange = false;
+        });
+
+        scheduleUpdate();
     }
 
     tbody.addEventListener('mousedown', (e) => {
@@ -1104,7 +1184,6 @@ function initOrderDetailDragSelect(tbody) {
                 if (idx === max) started = false;
             });
             endRealIdx = realIdx;
-            reachedBottom = false;
             updateRowSelection();
             return;
         }
@@ -1113,63 +1192,35 @@ function initOrderDetailDragSelect(tbody) {
         startRealIdx = realIdx;
         State.selectedOrderIndices.clear();
         State.selectedOrderIndices.add(realIdx);
-        reachedBottom = false;
         updateRowSelection();
-
-        const onMouseMove = (e) => {
-            if (!isDragging) return;
-
-            startAutoScroll(e);
-
-            let targetIdx;
-            const tr = document.elementFromPoint(e.clientX, e.clientY)?.closest('tr.order-row');
-            if (tr) {
-                targetIdx = parseInt(tr.dataset.realIndex);
-                reachedBottom = false;
-            } else {
-                const wrapper = getWrapper();
-                if (wrapper && e.clientY > wrapper.getBoundingClientRect().bottom) {
-                    if (reachedBottom) {
-                        return;
-                    }
-                    targetIdx = getLastRowIndex();
-                    reachedBottom = true;
-                } else {
-                    return;
-                }
-            }
-
-            if (targetIdx === undefined || isNaN(targetIdx) || targetIdx === endRealIdx) return;
-
-            endRealIdx = targetIdx;
-            const min = Math.min(startRealIdx, endRealIdx);
-            const max = Math.max(startRealIdx, endRealIdx);
-
-            State.selectedOrderIndices.clear();
-            const rows = tbody.querySelectorAll('tr.order-row');
-            let inRange = false;
-            rows.forEach(r => {
-                const idx = parseInt(r.dataset.realIndex);
-                if (idx === min) inRange = true;
-                if (inRange) State.selectedOrderIndices.add(idx);
-                if (idx === max) inRange = false;
-            });
-
-            scheduleUpdate();
-        };
-
-        const onMouseUp = () => {
-            isDragging = false;
-            endRealIdx = -1;
-            reachedBottom = false;
-            stopAutoScroll();
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
 
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+        lastMoveEvent = e;
+        if (!autoScrollTimer) {
+            const wrapper = getWrapper();
+            const rect = wrapper.getBoundingClientRect();
+            const mouseY = e.clientY;
+            const threshold = 35;
+            if (mouseY < rect.top + threshold || mouseY > rect.bottom - threshold) {
+                startAutoScroll(e);
+            }
+        }
+        handleMove(e);
+    }
+
+    function onMouseUp() {
+        isDragging = false;
+        endRealIdx = -1;
+        stopAutoScroll();
+        lastMoveEvent = null;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    }
 }
 
 function updateRowSelection() { document.querySelectorAll('#orderDetailTbody .order-row').forEach(row => { const realIdx = parseInt(row.dataset.realIndex); row.classList.toggle('selected', State.selectedOrderIndices.has(realIdx)); }); }
